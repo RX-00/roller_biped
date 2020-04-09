@@ -1,0 +1,5 @@
+Servo range with C++ serial interface program based on sinusoid_signal test:
+min: 4000
+max: 8000
+
+Don't forget to configure raspi-config for the GPIO pins activation
