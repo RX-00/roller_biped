@@ -12,7 +12,7 @@
 
 void setup(){
   //Setting Right Motor pin as OUTPUT
-  pinMode(INA_1,OUTPUT); 
+  pinMode(INA_1,OUTPUT);
   pinMode(INB_1,OUTPUT);
 
   //Setting Left Motor pin as OUTPUT

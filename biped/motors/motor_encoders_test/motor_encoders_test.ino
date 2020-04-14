@@ -2,6 +2,15 @@
 // NOTE: as of April 12, 2020 the encoders seem fine but the motor commands seem to be incorrect
 //       compared to the truth table
 
+
+// NOTE: TODO YOU NEED TO CHECK EACH THREE SET
+//       OF MOTOR PINS AGAIN, CHECK ONE MOTOR SET
+//       AT A TIME!!
+// testing out the right motor (1)
+// TODO: also figure out which way is forward and backward for each motor (CW and CCW)
+//       from the PWM signals
+
+
 // Right Motor  Pins
 #define INA_1 PA_3
 #define INB_1 PA_4
@@ -41,18 +50,10 @@ void setup(){
 //====== MAIN LOOP ======
 void loop(){
   updateEncoders();
-
-  // NOTE: TODO YOU NEED TO CHECK EACH THREE SET
-  //       OF MOTOR PINS AGAIN, CHECK ONE MOTOR SET
-  //       AT A TIME!!
-  // testing out the right motor (1)
-
-  analogWrite(PWM_1, 20); // input PWM signal
-  analogWrite(PWM_2, 20);
-  digitalWrite(INA_1, HIGH);
-  digitalWrite(INB_1, LOW);
-  //digitalWrite(INA_1, HIGH);   // input direction signals (refer to truth table)
-  //digitalWrite(INB_1, HIGH);
+  moveRightMotorFor(20, 2000);
+  stopFor(1000);
+  moveLeftMotorFor(20, 2000);
+  stopFor(1000);
 }
 
 
@@ -68,6 +69,54 @@ void setupMotors(){
   pinMode(INA_2, OUTPUT);
   pinMode(INB_2, OUTPUT);
   pinMode(PWM_2, OUTPUT);
+}
+
+// turn right motor at given speed (+ and - for direction)
+void moveRightMotorFor(float spd, int time){ // time in ms
+  if (spd > 0){
+    analogWrite(PWM_1, spd);
+    digitalWrite(INA_1, HIGH);
+    digitalWrite(INB_1, LOW);
+  }
+  else if(spd < 0){
+    analogWrite(PWM_1, abs(spd));
+    digitalWrite(INA_1, LOW);
+    digitalWrite(INB_1, HIGH);
+  }
+  else{ // stop
+    //analogWrite(PWM_1, spd);
+    digitalWrite(INA_1, LOW);
+    digitalWrite(INB_1, LOW);
+  }
+  delay(time);
+}
+
+// turn left motor at given speed (+ and - for direction)
+void moveLeftMotorFor(float spd, int time){ // time in ms
+  if (spd > 0){
+    analogWrite(PWM_2, spd);
+    digitalWrite(INA_2, LOW);
+    digitalWrite(INB_2, HIGH);
+  }
+  else if(spd < 0){
+    analogWrite(PWM_2, abs(spd));
+    digitalWrite(INA_2, HIGH);
+    digitalWrite(INB_2, LOW);
+  }
+  else{ // stop
+    //analogWrite(PWM_1, spd);
+    digitalWrite(INA_2, LOW);
+    digitalWrite(INB_2, LOW);
+  }
+  delay(time);
+}
+
+void stopFor(int time){
+  digitalWrite(INA_1, LOW);
+  digitalWrite(INB_1, LOW);
+  digitalWrite(INA_2, LOW);
+  digitalWrite(INB_2, LOW);
+  delay(time);
 }
 
 
