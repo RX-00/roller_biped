@@ -12,9 +12,9 @@
 
 
 // Right Motor  Pins
-#define INA_1 PA_3
-#define INB_1 PA_4
-#define PWM_1 PC_6
+#define INA_1 PC_6
+#define INB_1 PC_5
+#define PWM_1 PC_4
 
 // Left Motor Pins
 #define INA_2 PE_4
@@ -50,10 +50,10 @@ void setup(){
 //====== MAIN LOOP ======
 void loop(){
   updateEncoders();
-  moveRightMotorFor(20, 2000);
-  stopFor(1000);
-  moveLeftMotorFor(20, 2000);
-  stopFor(1000);
+  moveRightMotorFor(-25, 2000);
+  stopFor(50);
+  moveLeftMotorFor(25, 2000);
+  stopFor(50);
 }
 
 
@@ -79,6 +79,7 @@ void moveRightMotorFor(float spd, int time){ // time in ms
     digitalWrite(INB_1, LOW);
   }
   else if(spd < 0){
+    Serial.println("backwards right");
     analogWrite(PWM_1, abs(spd));
     digitalWrite(INA_1, LOW);
     digitalWrite(INB_1, HIGH);
@@ -99,6 +100,7 @@ void moveLeftMotorFor(float spd, int time){ // time in ms
     digitalWrite(INB_2, HIGH);
   }
   else if(spd < 0){
+    Serial.println("backwards left");
     analogWrite(PWM_2, abs(spd));
     digitalWrite(INA_2, HIGH);
     digitalWrite(INB_2, LOW);

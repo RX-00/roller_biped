@@ -1,38 +1,42 @@
-/* NOTE: this program is meant to be the main loop on the tiva c launchpad,
+/* NOTE: this program is meant to be the main loop on the arduino mega,
  *       meaning that it will operate the motors input from computer, output to motors
  *       and it will input encoder readings and send back to the computer
  * - The IMU and servo control will be left up for the computer itself for now
- *   as of April 14, 2020
+ *   as of April 17, 2020
  * =======
  */
+
+//TODO: change all the ports to ones compatible with the mega
+//TODO: figure out messenging between the pi and mega and get that up
+//TODO: IMU from websites found on phone
 
 #include <Messenger.h>
 #include <limits.h>
 
-// Reset Pin, if HIGH then tiva c launchpad will reset
-#define RESET_PIN PB_2
+// Reset Pin, if HIGH then arduino mega  will reset
+#define RESET_PIN 
 
 // Right Motor  Pins
-#define INA_1 PA_3
-#define INB_1 PA_4
-#define PWM_1 PC_6
+#define INA_1 
+#define INB_1 
+#define PWM_1 
 
 // Left Motor Pins
-#define INA_2 PE_4
-#define INB_2 PE_5
-#define PWM_2 PC_5
+#define INA_2 
+#define INB_2 
+#define PWM_2 
 
 // Left Encoder
-#define Left_Encoder_PinA PF_4
-#define Left_Encoder_PinB PD_7
+#define Left_Encoder_PinA 
+#define Left_Encoder_PinB 
 
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
 
 // Right Encoder
-#define Right_Encoder_PinA PD_6
-#define Right_Encoder_PinB PC_7
+#define Right_Encoder_PinA
+#define Right_Encoder_PinB
 
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
