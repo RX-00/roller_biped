@@ -40,11 +40,11 @@ void setup() {
 
 //====== MAIN LOOP ======
 void loop() {
-  updateEncoders();
-  moveRightMotorFor(50, 200);
-  moveLeftMotorFor(50, 200);
-  moveRightMotorFor(-50, 200);
-  moveLeftMotorFor(-50, 200);
+  //updateEncoders();
+  //moveRightMotorFor(50, 200);
+  //moveLeftMotorFor(50, 200);
+  //moveRightMotorFor(-50, 200);
+  //moveLeftMotorFor(-50, 200);
 }
 
 
@@ -70,7 +70,6 @@ void moveRightMotorFor(float spd, int time) { // time in ms
     digitalWrite(INB_1, LOW);
   }
   else if (spd < 0) {
-    Serial.println("backwards right");
     analogWrite(PWM_1, abs(spd));
     digitalWrite(INA_1, LOW);
     digitalWrite(INB_1, HIGH);
@@ -91,7 +90,6 @@ void moveLeftMotorFor(float spd, int time) { // time in ms
     digitalWrite(INB_2, HIGH);
   }
   else if (spd < 0) {
-    Serial.println("backwards left");
     analogWrite(PWM_2, abs(spd));
     digitalWrite(INA_2, HIGH);
     digitalWrite(INB_2, LOW);

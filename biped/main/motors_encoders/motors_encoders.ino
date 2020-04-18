@@ -14,29 +14,29 @@
 #include <limits.h>
 
 // Reset Pin, if HIGH then arduino mega  will reset
-#define RESET_PIN 
+#define RESET_PIN 7
 
 // Right Motor  Pins
-#define INA_1 
-#define INB_1 
-#define PWM_1 
+#define INA_1 2
+#define INB_1 4
+#define PWM_1 5
 
 // Left Motor Pins
-#define INA_2 
-#define INB_2 
-#define PWM_2 
+#define INA_2 12
+#define INB_2 13
+#define PWM_2 11
 
 // Left Encoder
-#define Left_Encoder_PinA 
-#define Left_Encoder_PinB 
+#define Left_Encoder_PinA 20
+#define Left_Encoder_PinB 21
 
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
 
 // Right Encoder
-#define Right_Encoder_PinA
-#define Right_Encoder_PinB
+#define Right_Encoder_PinA 18
+#define Right_Encoder_PinB 19
 
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
@@ -231,16 +231,14 @@ void updateMotors(){
 
 //======= RESET PIN FUNCTIONS =======
 void setupResetPin(){
-  pinMode(GREEN_LED, OUTPUT);
+  digitalWrite(RESET_PIN, HIGH);
+  delay(200);
   pinMode(RESET_PIN, OUTPUT);
-
-  // NOTE: You need to physically connect the RESET pins to the ones on the tiva c
   digitalWrite(RESET_PIN, HIGH);
 }
 
 void resetBoard(){
-  digitalWrite(GREEN_LED, HIGH);
-  delay(999);
+  Serial.println();
+  delay(1000);
   digitalWrite(RESET_PIN, LOW);
-  digitalWrite(GREEN_LED, LOW);
 }
