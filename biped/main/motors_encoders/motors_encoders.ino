@@ -79,26 +79,15 @@ void loop(){
 
 
 //====== SERIAL FUNCTIONS ======
-//Read input from computer over serial port to the tiva c launchpad
+// Read in input from pi
 void readSerialInput(){
-  while(Serial.available() > 0){
-    int data = Serial.read();
-    Messenger_Handler.process(data);
+  if (Serial.available() > 0){
+    String data = Serial.readStringUntil('\n');
+    Serial.print("Received: ");
+    Serial.println(data);
   }
-}
-
-void onMsgComplete(){
-  char reset[] = "r";
-  char set_spd[] = "s";
-
-  if (Messenger_Handler.checkString(reset)){
-    resetBoard();
-    Serial.println("Machine resetting has finished...");
-  }
-
-  if (Messenger_Handler.checkString(set_spd)){
-    setSpd();
-    return;
+  else{
+    Serial.println("ERROR: serial was not available...");
   }
 }
 
