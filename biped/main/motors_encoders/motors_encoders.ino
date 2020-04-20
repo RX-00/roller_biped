@@ -10,7 +10,6 @@
 //TODO: figure out messenging between the pi and mega and get that up
 //TODO: IMU from websites found on phone
 
-#include <Messenger.h>
 #include <limits.h>
 
 // Reset Pin, if HIGH then arduino mega  will reset
@@ -42,9 +41,6 @@ volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
 volatile bool RightEncoderBSet;
 
-// Messenger Object
-Messenger Messenger_Handler = Messenger();
-
 // Var for time updating
 unsigned long lastUpdateMicrosecs = 0;
 unsigned long lastUpdateMillisecs = 0;
@@ -64,7 +60,6 @@ void setup(){
 	setupEncoders();
   setupMotors();
   setupResetPin();
-  Messenger_Handler.attach(onMsgComplete);
 }
 
 
@@ -87,7 +82,7 @@ void readSerialInput(){
     Serial.println(data);
   }
   else{
-    Serial.println("ERROR: serial was not available...");
+    Serial.println("ERROR: serial was not available...\n");
   }
 }
 
@@ -163,8 +158,8 @@ void setupMotors(){
 }
 
 void setSpd(){
-  motorRspd = Messenger_Handler.readLong();
-  motorLspd = Messenger_Handler.readLong();
+  //motorRspd = Messenger_Handler.readLong();
+  //motorLspd = Messenger_Handler.readLong();
 }
 
 // NOTE: move right and left servo functions should be the same code body as the equiv function in
