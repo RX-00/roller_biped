@@ -65,10 +65,10 @@ void setup(){
 
 //====== MAIN LOOP ======
 void loop(){
-  readSerialInput();
-  updateTime();
-  updateEncoders();
-  updateMotors();
+  readSerialInput(); // update mega of motor spd from pi
+  updateTime();      // update time to pi
+  updateEncoders();  // update encoders to pi
+  updateMotors();    // update motor spd to pi
 }
 
 
@@ -77,12 +77,20 @@ void loop(){
 // Read in input from pi
 void readSerialInput(){
   if (Serial.available() > 0){
+    // NOTE: incoming data should be in form: "lp###rn###" w/ p & n interchangeable
+    //char incomingByte = Serial.read();
     String data = Serial.readStringUntil('\n');
-    Serial.print("Received: ");
-    Serial.println(data);
+    Serial.println(data); // send back to pi to print what the arduino got (hopefully)
+    
+    // parse through string to get motor speed updates
+
+    
+    // update motor speeds
+    motorLspd = 0;
+    motorRspd = 0;
   }
   else{
-    Serial.println("ERROR: serial was not available...\n");
+    //Serial.println("ERROR: serial was not available...\n");
   }
 }
 
@@ -155,11 +163,6 @@ void setupMotors(){
   pinMode(INA_2, OUTPUT);
   pinMode(INB_2, OUTPUT);
   pinMode(PWM_2, OUTPUT);
-}
-
-void setSpd(){
-  //motorRspd = Messenger_Handler.readLong();
-  //motorLspd = Messenger_Handler.readLong();
 }
 
 // NOTE: move right and left servo functions should be the same code body as the equiv function in

@@ -40,11 +40,11 @@ void setup() {
 
 //====== MAIN LOOP ======
 void loop() {
-  //updateEncoders();
-  //moveRightMotorFor(50, 200);
-  //moveLeftMotorFor(50, 200);
-  //moveRightMotorFor(-50, 200);
-  //moveLeftMotorFor(-50, 200);
+  updateEncoders();
+  moveRightMotorFor(50, 200);
+  moveLeftMotorFor(50, 200);
+  moveRightMotorFor(-50, 200);
+  moveLeftMotorFor(-50, 200);
 }
 
 
