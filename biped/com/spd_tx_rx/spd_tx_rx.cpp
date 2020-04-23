@@ -6,9 +6,12 @@
  * NOTE: This is using UART Serial protocol at a baud rate of 115200 with default
  *       8N1 format, which is 8 data bits, no parity, 1 stop bit
  *
+ * NOTE: data form for motor speed:
+ *                 l(+/-)###r(+/-)###
  */
 
 #include <iostream>
+#include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
 #include <string>
@@ -39,13 +42,32 @@ int main(int argc, char** argv){
     return 0;
   }
 
-  usleep(2000000); // usec -> 2000ms for stable condition TODO: check how short this can be
+  usleep(1000000); // usec -> 1000ms for stable condition TODO: check how short this can be
 
   for(int j = 0; j < 10; j++){
 
+    data = ""; // clear up the data
+
+    // psuedo testing as if speed was updated (0 - 255 due to PWM analog output)
+    l_spd = rand() % (255 * 2 + 1) + (-255); // this is to include -255 to 255
+    r_spd = rand() % (255 * 2 + 1) + (-255);
+
     // TODO: concatenate together data string to send to mega
-    //       then put it into str_send
-    strcpy(str_send[0], data);
+    if(l_spd > 0){
+      data = data + "l" + "+" + std::to_string(l_spd);
+    }
+    else{
+      data = data + "l" + std::to_string(l_spd);
+    }
+    if(r_spd > 0){
+      data = data + "r" + "+" + std::to_string(r_spd);
+    }
+    else{
+      data = data + "r" + std::to_string(r_spd);
+    }
+
+    // then put it into str_send
+    strcpy(str_send[0], data.c_str()); //.str() since strcpy only accepts const char*
 
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
     printf("Sent to mega: '%s' \n", str_send[0]);
@@ -56,9 +78,11 @@ int main(int argc, char** argv){
     if(n > 0){
       str_recv[n] = 0; // always put a "null" at the end of a string
       printf("Received %i bytes: '%s'\n", n, (char *)str_recv);
+
+      // TODO: Figure out how to parse the data from the mega
     }
-    
-    usleep(100000); // sleep for 1000ms
+
+    usleep(500000); // sleep for 500ms
   }
 
   RS232_CloseComport(PORT_NUM);
