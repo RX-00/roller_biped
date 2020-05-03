@@ -4,12 +4,12 @@
  * - The IMU and servo control will be left up for the computer itself for now
  *   as of April 17, 2020
  * =======
+ * 
+ * THE EXPECTED SIZE OF ARRAY SHOULD BE 11
  */
 
-//TODO: change all the ports to ones compatible with the mega
-//TODO: figure out messenging between the pi and mega and get that up
-//TODO: IMU from websites found on phone
-
+#include <string.h>
+#include <stdio.h>
 #include <limits.h>
 
 // Reset Pin, if HIGH then arduino mega  will reset
@@ -77,21 +77,47 @@ void loop(){
 // Read in input from pi
 void readSerialInput(){
   if (Serial.available() > 0){
-    // NOTE: incoming data should be in form: "lp###rn###" w/ p & n interchangeable
-    //char incomingByte = Serial.read();
+    // NOTE: incoming data should be in form: "l+###r-###" w/ + & - interchangeable
     String data = Serial.readStringUntil('\n');
-    Serial.println(data); // send back to pi to print what the arduino got (hopefully)
     
     // parse through string to get motor speed updates
+    char data_char[data.length() + 1];
+    strcpy(data_char, data.c_str()); // use strcpy() to copy the c-string into a char array
+    const char delim[2] = ";";
+    char *l_token, *r_token;
+    l_token = strtok(data_char, delim); // get first token of the string data
+    r_token = strtok(NULL, delim);
 
-    
     // update motor speeds
-    motorLspd = 0;
-    motorRspd = 0;
+    motorLspd = interpretData(l_token);
+    motorRspd = interpretData(r_token);
+
+    //Serial.println(motorLspd);
+    //Serial.println(motorRspd);
   }
   else{
     //Serial.println("ERROR: serial was not available...\n");
   }
+}
+
+//interpret the msg for the speed
+int interpretData(char *input_token){ // NOTE: *input_token is equiv. to input_token[0]
+  int spd, sign;
+  if(input_token[1] == '+'){
+    spd = charArrayToInt(input_token);
+  }
+  else if(input_token[1] == '-'){
+    sign = -1;
+    spd = charArrayToInt(input_token) * sign;
+  }
+  return spd;
+}
+
+//convert char array in int, NOTE: default length of token should be 5
+int charArrayToInt(char *input_token){
+  int result;
+  result = (input_token[2] - '0') * 100 + (input_token[3] - '0') * 10 + (input_token[4] - '0');
+  return result;
 }
 
 
@@ -139,7 +165,7 @@ void updateEncoders(){
   Serial.print("\t");
   Serial.print(Right_Encoder_Ticks);
   Serial.print("\n");
- }
+}
 
 void do_Left_Encoder(){
   LeftEncoderBSet = digitalRead(Left_Encoder_PinB);   // read the input pin
@@ -149,7 +175,7 @@ void do_Left_Encoder(){
 void do_Right_Encoder(){
   RightEncoderBSet = digitalRead(Right_Encoder_PinB);   // read the input pin
   Right_Encoder_Ticks += RightEncoderBSet ? -1 : +1;
- }
+}
 
 
 //====== MOTOR FUNCTIONS ======
@@ -207,12 +233,14 @@ void updateMotors(){
   moveRMotor(motorRspd);
   moveLMotor(motorLspd);
 
+  /*
   Serial.print("s");
   Serial.print("\t");
   Serial.print(motorLspd);
   Serial.print("\t");
   Serial.print(motorRspd);
   Serial.print("\n");
+  */
 }
 
 

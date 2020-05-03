@@ -27,6 +27,40 @@
 #define PORT_NUM 24 // NOTE: using ttyACM0 -> port number 24
 #define BAUDRATE 115200
 
+// function to count digits
+int countDigit(int num){
+  int count = 0;
+  while(num != 0){
+    num = num / 10;
+    count++;
+  }
+  return count;
+}
+
+// function to add 0's in so the resulting string will be the right size
+// l+###;r-###
+std::string formatIntToString(int input_spd){
+  int spd = abs(input_spd);
+  std::string spd_str;
+  int digits = countDigit(spd);
+
+  if (digits == 3){
+    spd_str = std::to_string(spd);
+  }
+  else if (digits == 2){
+    spd_str = "0" + std::to_string(spd);
+  }
+  else if (digits == 1){
+    spd_str = "00" + std::to_string(spd);
+  }
+
+  if (input_spd < 0){
+    spd_str = "-" + spd_str;
+  }
+
+  return spd_str; // should be a three digit number
+}
+
 
 int main(int argc, char** argv){
   char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
@@ -37,7 +71,7 @@ int main(int argc, char** argv){
   int r_spd = 0;
   std::string data = "";
 
-  if(RS232_OpenComport(PORT_NUM, BAUDRATE, mode, 0)){ // 0 is no flowctrl
+  if (RS232_OpenComport(PORT_NUM, BAUDRATE, mode, 0)){ // 0 is no flowctrl
     printf("Cannot open port\n");
     return 0;
   }
@@ -52,19 +86,25 @@ int main(int argc, char** argv){
     l_spd = rand() % (255 * 2 + 1) + (-255); // this is to include -255 to 255
     r_spd = rand() % (255 * 2 + 1) + (-255);
 
-    // TODO: concatenate together data string to send to mega
     if(l_spd > 0){
-      data = data + "l" + "+" + std::to_string(l_spd);
+      data = data + "l" + "+" + formatIntToString(l_spd);
     }
     else{
-      data = data + "l" + std::to_string(l_spd);
+      data = data + "l" + formatIntToString(l_spd);
     }
+
+    //delimiter
+    data = data + ";";
+
     if(r_spd > 0){
-      data = data + "r" + "+" + std::to_string(r_spd);
+      data = data + "r" + "+" + formatIntToString(r_spd);
     }
     else{
-      data = data + "r" + std::to_string(r_spd);
+      data = data + "r" + formatIntToString(r_spd);
     }
+
+    // make sure you're sending the data with \n since that's how the mega differentiates each msg
+    data = data + "\n";
 
     // then put it into str_send
     strcpy(str_send[0], data.c_str()); //.str() since strcpy only accepts const char*
