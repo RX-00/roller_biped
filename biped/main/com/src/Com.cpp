@@ -36,12 +36,16 @@ Com::Com(){
   char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
   char str_send[1][BUF_SIZE]; // send data buffer
   unsigned char str_recv[BUF_SIZE]; // recv data buffer
-  std::string data = "";
+  data = "";
+  l_encoder = 0;
+  r_encoder = 0;
+  last_update_us = 0;
+  sec_since_last_update = 0;
 }
 
 // destructor
 Com::~Com(){
-  RS232_CloseComport(port_num);
+  //RS232_CloseComport(port_num);
 }
 
 // count how many digits are in num
@@ -104,14 +108,14 @@ void Com::TXData(int l_spd, int r_spd){
   if (RS232_OpenComport(port_num, baud_rate, mode, 0)){ // 0 is no flowctrl
     printf("ERROR: Cannot open port for TX\n");
   }
-
-  usleep(250000); // wait for 250 milliseconds for stable connection NOTE: can it be shorter?
-  data = Com::formatData(int l_spd, int r_spd); // set new data to send
+  //TODO: does the port not open? figure out what went wrong
+  usleep(100000); // wait for 100 milliseconds for stable connection
+  data = Com::formatData(l_spd, r_spd); // set new data to send
   // then put it into str_send
   strcpy(str_send[0], data.c_str()); //.str( ) since strcpy only accepts const char*
   RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
   printf("Sent to mega: '%s' \n", str_send[0]);
-  usleep(25000); // waits for 25ms
+  usleep(150000);
   RS232_CloseComport(port_num);
 }
 

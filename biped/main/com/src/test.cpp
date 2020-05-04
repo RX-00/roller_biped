@@ -24,6 +24,16 @@
 #include "rs232.h"
 
 int main(int argc, char** argv){
+  std::cout << "Initiating coms..." << std::endl;
+  Com comms;
+
+  std::cout << "Sending dummy data to mega..." << std::endl;
+  comms.TXData(50, -50);
+
+  std::cout << "Got left encoder val: " << comms.getLeftEncoder() << std::endl;
+  std::cout << "Got right encoder val:" << comms.getRightEncoder() << std::endl;
+  std::cout << "Got usec time: " << comms.getTimeUsec() << std::endl;
+  std::cout << "Got sec time: " << comms.getTimeSec() << std::endl;
 
   return 0;
 }
