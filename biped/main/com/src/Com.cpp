@@ -32,7 +32,7 @@ Com::Com(){
   buf_size = BUF_SIZE;
   port_num = PORT_NUM;
   baud_rate = BAUDRATE;
-  delim = ";";
+  delim = ';';
   char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
   char str_send[1][BUF_SIZE]; // send data buffer
   unsigned char str_recv[BUF_SIZE]; // recv data buffer
@@ -127,7 +127,7 @@ void Com::RXData(){
   if (n > 0){
     str_recv[n] = 0; // always put a "null" at the end of a string
     printf("RX %i bytes: '%s'\n", n, (char *)str_recv);
-    cout << "Test: \n" << (char *)str_recv << endl; // TODO: figure out if the str_recv buffer can be formatted into std::string for parsing
+    std::cout << "Test: \n" << (char *)str_recv << std::endl; // TODO: figure out if the str_recv buffer can be formatted into std::string for parsing
 
     std::string place_holder = "test";
 

@@ -14,20 +14,22 @@
 
 #include "rs232.h"
 
+#define BUF_SIZE 128
+
 class Com{
  private:
   int buf_size;
   int port_num;
   int baud_rate;
   char delim;
-  char mode[];
-  char str_send[][];
-  unsigned char str_recv[];
+  char str_send[1][BUF_SIZE];
+  unsigned char str_recv[BUF_SIZE];
   std::string data;
   int l_encoder;
   int r_encoder;
   long last_update_us;
   long sec_since_last_update;
+  char mode[];
 
  public:
   Com();
@@ -44,10 +46,10 @@ class Com{
   void interpretTime(std::string line);
   void interpretEncoder(std::string line);
 
-  int getLeftEncoder() const {return l_encoder};
-  int getRightEncoder() const {return r_encoder};
-  long getTimeUsec() const {return last_update_us};
-  long getTimeSec() const {return sec_since_last_update}
+  int getLeftEncoder() const {return l_encoder;};
+  int getRightEncoder() const {return r_encoder;};
+  long getTimeUsec() const {return last_update_us;};
+  long getTimeSec() const {return sec_since_last_update;};
 };
 
 
