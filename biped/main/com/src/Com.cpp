@@ -41,7 +41,7 @@ Com::Com(){
 
 // destructor
 Com::~Com(){
-  RS232_CloseComport(port_num);'
+  RS232_CloseComport(port_num);
 }
 
 // count how many digits are in num
