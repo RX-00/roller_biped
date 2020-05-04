@@ -127,7 +127,7 @@ void Com::RXData(){
   if (n > 0){
     str_recv[n] = 0; // always put a "null" at the end of a string
     printf("RX %i bytes: '%s'\n", n, (char *)str_recv);
-    std::cout << "Test: \n" << (char *)str_recv << std::endl; // TODO: figure out if the str_recv buffer can be formatted into std::string for parsing
+    cout << "Test: \n" << (char *)str_recv << endl; // TODO: figure out if the str_recv buffer can be formatted into std::string for parsing
 
     std::string place_holder = "test";
 
