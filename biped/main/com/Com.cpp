@@ -39,6 +39,11 @@ Com::Com(){
   std::string data = "";
 }
 
+// destructor
+Com::~Com(){
+  RS232_CloseComport(port_num);'
+}
+
 // count how many digits are in num
 int Com::countDigit(int num){
   int count = 0;
@@ -50,7 +55,7 @@ int Com::countDigit(int num){
 }
 
 // format the input into the form -### for the data transfer
-std::string Com::formatIntToString(int input_spd){
+std::string Com::formatIntToString(const int &input_spd){
   int spd = abs(input_spd);
   std::string spd_str;
   int digits = countDigit(spd);
@@ -73,30 +78,77 @@ std::string Com::formatIntToString(int input_spd){
 }
 
 // format the parts into the proper form w/ delimiter
-std::string Com::formatData(std::string l_spd, std::string r_spd){
-  std::string data = "";
-  data = l_spd + delim + r_spd;
+std::string Com::formatData(const int &l_spd, const int &r_spd){
+  if(l_spd > 0){
+    data = data + "l" + "+" + Com::formatIntToString(l_spd);
+  } else{
+    data = data + "l" + Com::formatIntToString(l_spd);
+  }
+
+  // delimiter
+  data = data + ";";
+
+  if(r_spd > 0){
+    data = data + "r" + "+" + Com::formatIntToString(r_spd);
+  } else{
+    data = data + "r" + Com::formatIntToString(r_spd);
+  }
+
+  //  \n is how the mega differentiates each msg
+  data = data + "\n";
   return data;
 }
 
-void Com::TXData(std::string data){
+// transmit data
+void Com::TXData(int l_spd, int r_spd){
   if (RS232_OpenComport(port_num, baud_rate, mode, 0)){ // 0 is no flowctrl
-    printf("ERROR: Cannot open port\n");
+    printf("ERROR: Cannot open port for TX\n");
   }
 
   usleep(250000); // wait for 250 milliseconds for stable connection NOTE: can it be shorter?
-
-  
+  data = Com::formatData(int l_spd, int r_spd); // set new data to send
+  // then put it into str_send
+  strcpy(str_send[0], data.c_str()); //.str( ) since strcpy only accepts const char*
+  RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
+  printf("Sent to mega: '%s' \n", str_send[0]);
+  usleep(25000); // waits for 25ms
+  RS232_CloseComport(port_num);
 }
 
+// receive and interpret data
 void Com::RXData(){
+  if (RS232_OpenComport(port_num, baud_rate, mode, 0)){ // 0 is no flowctrl
+    printf("ERROR: Cannot open port for RX\n");
+  }
 
+  // get chars from serial port (if any)
+  int n = RS232_PollComport(port_num, str_recv, (int)buf_size);
+
+  if (n > 0){
+    str_recv[n] = 0; // always put a "null" at the end of a string
+    printf("RX %i bytes: '%s'\n", n, (char *)str_recv);
+    cout << "Test: \n" << (char *)str_recv << endl; // TODO: figure out if the str_recv buffer can be formatted into std::string for parsing
+
+    if (){
+      Com::interpretTime();
+    }
+    if (){
+      Com::interpretEncoder();
+    }
+  }
+
+  usleep(150000); // 150 ms, shortest is ~100 ms according to doc
+  RS232_CloseComport(port_num);
 }
 
-long Com::interpretTime(){
-  
+// parse and interpret time data
+void Com::interpretTime(std::string line){
+  last_update_us = ;
+  sec_since_last_update = ;
 }
 
-long Com::interpretEncoder(){
-  
+// parse and interpret encoder data
+void Com::interpretEncoder(std::string line){
+  l_encoder = ;
+  r_encoder = ;
 }

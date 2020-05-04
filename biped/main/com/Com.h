@@ -24,22 +24,30 @@ class Com{
   char str_send[][];
   unsigned char str_recv[];
   std::string data;
+  int l_encoder;
+  int r_encoder;
+  long last_update_us;
+  long sec_since_last_update;
 
  public:
   Com();
+  ~Com();
 
   int countDigit(int num);
 
-  std::string formatIntToString(int input_spd);
-  std::string formatData(std::string l_spd, std::string r_spd);
+  std::string formatIntToString(const int &input_spd);
+  std::string formatData(const int &l_spd, const int &r_spd);
 
-  void TXData(std::string data);
+  void TXData(int l_spd, int r_spd);
   void RXData();
 
-  long interpretTime();
-  long interpretEncoder();
-  //int interpretSpeed();
+  void interpretTime(std::string line);
+  void interpretEncoder(std::string line);
 
+  int getLeftEncoder() const {return l_encoder};
+  int getRightEncoder() const {return r_encoder};
+  long getTimeUsec() const {return last_update_us};
+  long getTimeSec() const {return sec_since_last_update}
 };
 
 
