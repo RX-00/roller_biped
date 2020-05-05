@@ -23,14 +23,49 @@
 
 #include "rs232.h"
 
+#define BUF_SIZE 128
+#define PORT_NUM 24 // NOTE: using ttyACM0 -> port number 24
+#define BAUDRATE 115200
+
+
 int main(int argc, char** argv){
-  std::cout << "Initiating coms..." << std::endl;
-  Com comms;
+  Com comms(BUF_SIZE, PORT_NUM, BAUDRATE);
+  char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
+  char str_send[1][BUF_SIZE]; // send data buffer
+  unsigned char str_recv[BUF_SIZE]; // recv data buffer
 
-  std::cout << "Sending dummy data to mega..." << std::endl;
-  comms.TXData(50, -50);
+  if (RS232_OpenComport(PORT_NUM, BAUDRATE, mode, 0)){ // 0 is no flowctrl
+    printf("Cannot open port\n");
+    return 0;
+  }
 
-  std::cout << "Got left encoder val: " << comms.getLeftEncoder() << std::endl;
+  usleep(150000); // usec -> 150ms for stable condition
+
+  for(int j = 0; j < 10; j++){
+    // dummy velocity data
+    l_spd = rand() % (255 * 2 + 1) + (-255); // this is to include -255 to 255
+    r_spd = rand() % (255 * 2 + 1) + (-255);
+
+    // then put it into str_send
+    strcpy(str_send[0], data.c_str());
+
+    RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
+    printf("Sent to mega: '%s' \n", str_send[0]);
+    usleep(200000); // waits for reply 200ms
+
+    // gets chars from serial port (if any)
+    int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
+    if(n > 0){
+      str_recv[n] = 0; // always put a "null" at the end of a string
+      printf("Received %i bytes: '%s'\n", n, (char *)str_recv);
+    }
+
+    usleep(200000); // sleep for 200ms
+  }
+
+  RS232_CloseComport(PORT_NUM);
+
+  std::cout << "\n\nGot left encoder val: " << comms.getLeftEncoder() << std::endl;
   std::cout << "Got right encoder val:" << comms.getRightEncoder() << std::endl;
   std::cout << "Got usec time: " << comms.getTimeUsec() << std::endl;
   std::cout << "Got sec time: " << comms.getTimeSec() << std::endl;

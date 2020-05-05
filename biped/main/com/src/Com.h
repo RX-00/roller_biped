@@ -24,15 +24,17 @@ class Com{
   char delim;
   char str_send[1][BUF_SIZE];
   unsigned char str_recv[BUF_SIZE];
+  int l_spd;
+  int r_spd;
   std::string data;
   int l_encoder;
   int r_encoder;
   long last_update_us;
   long sec_since_last_update;
-  char mode[];
 
  public:
   Com();
+  Com(int BUF_SIZE, int PORT_NUM, int BAUDRATE);
   ~Com();
 
   int countDigit(int num);
@@ -42,6 +44,7 @@ class Com{
 
   void TXData(int l_spd, int r_spd);
   void RXData();
+  void TX_RX_Data(int l_spd, int r_spd);
 
   void interpretTime(std::string line);
   void interpretEncoder(std::string line);
@@ -50,6 +53,8 @@ class Com{
   int getRightEncoder() const {return r_encoder;};
   long getTimeUsec() const {return last_update_us;};
   long getTimeSec() const {return sec_since_last_update;};
+  int getLSpd() const {return l_spd;};
+  int getRSpd() const {return r_spd;};
 };
 
 
