@@ -33,7 +33,7 @@ Com::Com(){
   port_num = PORT_NUM;
   baud_rate = BAUDRATE;
   delim = ';';
-  char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
+  //char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
   char str_send[1][BUF_SIZE]; // send data buffer
   unsigned char str_recv[BUF_SIZE]; // recv data buffer
   data = "";
@@ -105,17 +105,19 @@ std::string Com::formatData(const int &l_spd, const int &r_spd){
 
 // transmit data
 void Com::TXData(int l_spd, int r_spd){
+  char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
+  
   if (RS232_OpenComport(port_num, baud_rate, mode, 0)){ // 0 is no flowctrl
     printf("ERROR: Cannot open port for TX\n");
   }
-  //TODO: does the port not open? figure out what went wrong
-  usleep(100000); // wait for 100 milliseconds for stable connection
+
+  usleep(500000); // wait for 500 milliseconds for stable connection
   data = Com::formatData(l_spd, r_spd); // set new data to send
   // then put it into str_send
   strcpy(str_send[0], data.c_str()); //.str( ) since strcpy only accepts const char*
   RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
   printf("Sent to mega: '%s' \n", str_send[0]);
-  usleep(150000);
+  usleep(500000);
   RS232_CloseComport(port_num);
 }
 
