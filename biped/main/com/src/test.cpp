@@ -50,8 +50,8 @@ int main(int argc, char** argv){
     strcpy(str_send[0], comms.data.c_str());
 
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
-    printf("Sent to mega: '%s' \n", str_send[0]);
-    usleep(200000); // waits for reply 200ms
+    //printf("Sent to mega: '%s' \n", str_send[0]);
+    usleep(100000); // waits for reply 100ms
 
     // gets chars from serial port (if any)
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
@@ -62,6 +62,7 @@ int main(int argc, char** argv){
     }
     usleep(100000); // sleep for 100ms
   }
+
   RS232_CloseComport(PORT_NUM);
 
   std::cout << "\n\nGot left encoder val: " << comms.getLeftEncoder() << std::endl;

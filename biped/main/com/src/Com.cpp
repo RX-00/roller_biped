@@ -16,6 +16,9 @@
 #include <cmath>
 #include <string>
 #include <sstream>
+#include <regex>
+#include <algorithm>
+#include <iterator>
 
 #include <unistd.h>
 #include <sys/timeb.h>
@@ -136,18 +139,19 @@ void Com::interpretRXData(std::string RX_data){
   //NOTE: be careful about how fast this refresh really is...
   //printf("RX data: \n%s \n", RX_data.c_str());
 
-  // NOTE: size_type is similar to size_t (unsigned int to rep any array size) but for and possible string size
-  std::string::size_type pos = 0;
-  std::string::size_type prev = 0;
-  while((pos = RX_data.find(delim_line, prev)) != std::string::npos){
-    this->data_RX_vec.push_back(RX_data.substr(prev, pos - prev));
-    prev = pos + delim_line.size(); // so the remaining chars left over in the start of the next element is in the vector
+  data_RX_vec.clear();
+
+  std::regex pattern(delim_line);
+  std::copy(std::sregex_token_iterator(RX_data.begin(), RX_data.end(), pattern, -1),
+            std::sregex_token_iterator(), std::back_inserter(data_RX_vec));
+
+
+  for (std::string line: data_RX_vec){
+    std::cout << line;
+    // if line starts with an e then interpretEncoder()
+    // if line starts with an t then interpretTime()
   }
-
-  // for getting the last substring (or only, if delim is not found)
-  this->data_RX_vec.push_back(RX_data.substr(prev));
-
-  //std::cout << data_RX_vec[0] << std::endl;
+  //std::cout << "Processed Data: \n" << data_RX_vec[1] << std::endl;
 
   // interpret data inside
   interpretTime(RX_data);
