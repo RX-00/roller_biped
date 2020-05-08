@@ -42,8 +42,8 @@ class Com{
   std::string formatIntToString(const int &input_spd);
   std::string formatData();
 
-  void interpretTime(std::string line);
-  void interpretEncoder(std::string line);
+  void interpretTime(std::string line, char type);
+  void interpretEncoder(std::string line, char pos);
   void setSpd(int lspd, int rspd);
   void interpretRXData(std::string RX_data);
 

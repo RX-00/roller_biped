@@ -118,21 +118,29 @@ std::string Com::formatData(){
   return data;
 }
 
-// parse and interpret time data
-void Com::interpretTime(std::string line){
-  last_update_us = 0;
-  sec_since_last_update = 0;
-}
-
-// parse and interpret encoder data
-void Com::interpretEncoder(std::string line){
-  l_encoder = 0;
-  r_encoder = 0;
-}
-
 void Com::setSpd(int lspd, int rspd){
   l_spd = lspd;
   r_spd = rspd;
+}
+
+// parse and interpret time data
+void Com::interpretTime(std::string line, char type){
+  if (type == 'u'){ // set last update microseconds
+    last_update_us = 0;
+  }
+  if (type == 's'){ // set secs since last update
+    sec_since_last_update = 0;
+  }
+}
+
+// parse and interpret encoder data
+void Com::interpretEncoder(std::string line, char pos){
+  if (pos == 'l'){ // set left encoder
+    l_encoder = 0;
+  }
+  else if (pos == 'r'){ // set right encoder
+    r_encoder = 0;
+  }
 }
 
 void Com::interpretRXData(std::string RX_data){
@@ -147,14 +155,18 @@ void Com::interpretRXData(std::string RX_data){
 
 
   for (std::string line: data_RX_vec){
-    std::cout << line;
-    // if line starts with an e then interpretEncoder()
-    // if line starts with an t then interpretTime()
-  }
-  //std::cout << "Processed Data: \n" << data_RX_vec[1] << std::endl;
+    if (line[0] == 'e'){
+      // tokenize encoder data to [left and right]
+      std::stringstream ss(line); // convert line into a string stream
 
-  // interpret data inside
-  interpretTime(RX_data);
-  interpretEncoder(RX_data);
+      //interpretEncoder(l_token, 'l');
+      //interpretEncoder(r_token, 'r');
+    }
+    if (line[0] == 't'){
+      // tokenize time data to [lastUpdateMicrosecs and secsSinceLastUpdate]
+      interpretTime(line, 'u');
+      interpretTime(line, 's');
+    }
+  }
 
 }
