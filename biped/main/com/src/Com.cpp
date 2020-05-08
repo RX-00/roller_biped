@@ -127,11 +127,9 @@ void Com::setSpd(int lspd, int rspd){
 void Com::interpretTime(std::string line, char type){
   if (type == 'u'){ // set last update microseconds
     last_update_us = std::stoi(line);
-    std::cout << "us: " << std::stoi(line) << std::endl;
   }
   if (type == 's'){ // set secs since last update
     sec_since_last_update = std::stoi(line);
-    std::cout << "s: " << std::stoi(line) << std::endl;
   }
 }
 
@@ -139,11 +137,9 @@ void Com::interpretTime(std::string line, char type){
 void Com::interpretEncoder(std::string line, char pos){
   if (pos == 'l'){ // set left encoder
     l_encoder = std::stoi(line);
-    std::cout << "l: " << std::stoi(line) << std::endl;
   }
   else if (pos == 'r'){ // set right encoder
     r_encoder = std::stoi(line);
-    std::cout << "r: " << std::stoi(line) << std::endl;
   }
 }
 

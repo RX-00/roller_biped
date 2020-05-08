@@ -44,19 +44,11 @@ std::string formatIntToString(int input_spd){
   std::string spd_str;
   int digits = countDigit(spd);
 
-  if (digits == 3){
-    spd_str = std::to_string(spd);
-  }
-  else if (digits == 2){
-    spd_str = "0" + std::to_string(spd);
-  }
-  else if (digits == 1){
-    spd_str = "00" + std::to_string(spd);
-  }
+  if (digits == 3){spd_str = std::to_string(spd);}
+  else if (digits == 2){spd_str = "0" + std::to_string(spd);}
+  else if (digits == 1){spd_str = "00" + std::to_string(spd);}
 
-  if (input_spd < 0){
-    spd_str = "-" + spd_str;
-  }
+  if (input_spd < 0){spd_str = "-" + spd_str;}
 
   return spd_str; // should be a three digit number
 }
