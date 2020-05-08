@@ -57,6 +57,7 @@ int main(int argc, char** argv){
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
     if(n > 0){
       str_recv[n] = 0; // always put a "null" at the end of a string
+      //std::cout << (char *)str_recv << std::endl;
       std::string RX_data((char *)str_recv);
       comms.interpretRXData(RX_data);
     }
