@@ -126,29 +126,29 @@ void Com::setSpd(int lspd, int rspd){
 // parse and interpret time data
 void Com::interpretTime(std::string line, char type){
   if (type == 'u'){ // set last update microseconds
-    //last_update_us = std::stoi(line);
+    last_update_us = std::stoi(line);
+    std::cout << "us: " << std::stoi(line) << std::endl;
   }
   if (type == 's'){ // set secs since last update
-    //sec_since_last_update = std::stoi(line);
+    sec_since_last_update = std::stoi(line);
+    std::cout << "s: " << std::stoi(line) << std::endl;
   }
 }
 
 // parse and interpret encoder data
 void Com::interpretEncoder(std::string line, char pos){
   if (pos == 'l'){ // set left encoder
-    //l_encoder = std::stoi(line);
-    std::cout << (line) << std::endl;
+    l_encoder = std::stoi(line);
+    std::cout << "l: " << std::stoi(line) << std::endl;
   }
   else if (pos == 'r'){ // set right encoder
-    //r_encoder = std::stoi(line);
-    std::cout << (line) << std::endl;
+    r_encoder = std::stoi(line);
+    std::cout << "r: " << std::stoi(line) << std::endl;
   }
 }
 
 void Com::interpretRXData(std::string RX_data){
   //NOTE: be careful about how fast this refresh really is...
-  //printf("RX data: \n%s \n", RX_data.c_str());
-
   data_RX_vec.clear();
 
   std::stringstream ss(RX_data);
@@ -157,38 +157,35 @@ void Com::interpretRXData(std::string RX_data){
   while(getline(ss, tmp_str, '\n')){
     data_RX_vec.push_back(tmp_str);
   }
-  for (int i = 0; i < data_RX_vec.size(); i++){
-    std::cout << data_RX_vec[i] << std::endl;
-  }
-
-  /*
-  std::regex pattern(delim_line);
-  std::copy(std::sregex_token_iterator(RX_data.begin(), RX_data.end(), pattern, -1),
-            std::sregex_token_iterator(), std::back_inserter(data_RX_vec));
 
   for (std::string line: data_RX_vec){
-    std::cout << line;
     if (line[0] == 'e'){
       // tokenize encoder data to [left and right]
       std::stringstream ss(line); // convert line into a string stream
       std::string tmp_str;
       std::vector<std::string> tokens;
 
-      while(getline(ss, tmp_str, ';')){
-        //std::cout << tmp_str << std::endl;
-        tokens.push_back(tmp_str);
-      }
+      while(getline(ss, tmp_str, ';')){tokens.push_back(tmp_str);}
 
       //NOTE: check if these indices in the vector even exist first
-      //interpretEncoder(tokens[1], 'l');
-      //interpretEncoder(tokens[2], 'r');
+      if (tokens.size() > 2){
+        interpretEncoder(tokens[1], 'l');
+        interpretEncoder(tokens[2], 'r');
+      }
     }
     if (line[0] == 't'){
       // tokenize time data to [lastUpdateMicrosecs and secsSinceLastUpdate]
-      interpretTime(line, 'u');
-      interpretTime(line, 's');
+      std::stringstream ss(line); // convert line into a string stream
+      std::string tmp_str;
+      std::vector<std::string> tokens;
+
+      while(getline(ss, tmp_str, ';')){tokens.push_back(tmp_str);}
+
+      //NOTE: check if these indices in the vector even exist first
+      if (tokens.size() > 2){
+        interpretTime(tokens[1], 'u');
+        interpretTime(tokens[2], 's');
+      }
     }
   }
-  */
-
 }
