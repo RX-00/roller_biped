@@ -1,0 +1,9 @@
+[submodule "RS-232"]
+	path = RS-232
+	url = https://gitlab.com/Teuniz/RS-232
+[submodule "RTIMULib2"]
+	path = RTIMULib2
+	url = https://github.com/RTIMULib/RTIMULib2
+[submodule "biped/com/test/RS-232"]
+	path = biped/com/test/RS-232
+	url = https://gitlab.com/Teuniz/RS-232
