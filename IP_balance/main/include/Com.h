@@ -24,6 +24,8 @@ class Com{
   std::string delim_line;
   int l_spd;
   int r_spd;
+  int l_spd_RX;
+  int r_spd_RX;
   int l_encoder;
   int r_encoder;
   long last_update_us;
@@ -42,10 +44,11 @@ class Com{
   std::string formatIntToString(const int &input_spd);
   std::string formatData();
 
+  void interpretRXData(std::string RX_data);
   void interpretTime(std::string line, char type);
   void interpretEncoder(std::string line, char pos);
+  void interpretSpeed(std::string line, char pos);
   void setSpd(int lspd, int rspd);
-  void interpretRXData(std::string RX_data);
 
   int getLeftEncoder() const {return l_encoder;};
   int getRightEncoder() const {return r_encoder;};
@@ -53,6 +56,8 @@ class Com{
   long getTimeSec() const {return sec_since_last_update;};
   int getLSpd() const {return l_spd;};
   int getRSpd() const {return r_spd;};
+  int getLSpdRX() const {return l_spd_RX;};
+  int getRSpdRX() const {return r_spd_RX;};
 };
 
 

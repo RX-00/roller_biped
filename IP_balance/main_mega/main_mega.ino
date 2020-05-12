@@ -48,9 +48,14 @@ unsigned long currentMicrosecs = 0;
 unsigned long microsecsSinceLastUpdate = 0;
 float secsSinceLastUpdate = 0;
 
-// Motor speed inputs from the pc over serial
+// Motor speed from mega
 int motorLspd = 0;
 int motorRspd = 0;
+
+// Motor speed inputs from the pc over serial
+int motorLspd_RX = 0;
+int motorRspd_RX = 0;
+bool motorOverride = false;
 
 
 //====== SETUP FUNCTION ======
@@ -68,7 +73,15 @@ void loop(){
   readSerialInput(); // update mega of motor spd from pi
   updateTime();      // update time to pi
   updateEncoders();  // update encoders to pi
-  updateMotors();    // update motor spd to pi
+  if (motorOverride){
+    updateMotors(motorLspd_RX, motorRspd_RX);
+    delay(990); // delay 990 ms
+    motorOverride = false;
+  }
+  else{
+    updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
+    updateMotors(motorLspd, motorRspd);
+  }
 }
 
 
@@ -89,8 +102,9 @@ void readSerialInput(){
     r_token = strtok(NULL, delim);
 
     // update motor speeds
-    motorLspd = interpretData(l_token);
-    motorRspd = interpretData(r_token);
+    motorLspd_RX = interpretData(l_token);
+    motorRspd_RX = interpretData(r_token);
+    motorOverride = true;
   }
   else{
     //Serial.println("ERROR: serial was not available...\n");
@@ -226,13 +240,18 @@ void moveLMotor(float spd){
   }
 }
 
-void updateMotors(){
-  moveRMotor(motorRspd);
-  moveLMotor(motorLspd);
+void updateMotors(int mls, int mrs){
+  moveRMotor(mls);
+  moveLMotor(mrs);
+}
 
-  //Serial.print(motorLspd);
-  //Serial.print("   ");
-  //Serial.println(motorRspd);
+void updateMotorsPi(int mls, int mrs){
+  Serial.print("s");
+  Serial.print(";");
+  Serial.print(mls);
+  Serial.print(";");
+  Serial.print(mrs);
+  Serial.print("\n");
 }
 
 

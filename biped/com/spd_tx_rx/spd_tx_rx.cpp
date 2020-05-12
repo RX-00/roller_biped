@@ -70,7 +70,7 @@ int main(int argc, char** argv){
 
   usleep(1000000); // usec -> 1000ms for stable condition TODO: check how short this can be
 
-  for(int j = 0; j < 10; j++){
+  for(int j = 0; j < 50; j++){
 
     data = ""; // clear up the data
 

@@ -36,6 +36,8 @@ Com::Com(){
   delim_line = "\n";
   l_spd = 0;
   r_spd = 0;
+  l_spd_RX = 0;
+  r_spd_RX = 0;
   data = "";
   l_encoder = 0;
   r_encoder = 0;
@@ -51,6 +53,8 @@ Com::Com(int BUF_SIZE, int PORT_NUM, int BAUDRATE){
   delim = ';';
   l_spd = 0;
   r_spd = 0;
+  l_spd_RX = 0;
+  r_spd_RX = 0;
   data = "";
   l_encoder = 0;
   r_encoder = 0;
@@ -155,6 +159,22 @@ void Com::interpretEncoder(std::string line, char pos){
   }
 }
 
+// parse and interpret RX speed data
+void Com::interpretSpeed(std::string line, char pos){
+  try {
+    if (pos == 'l') // set left RX speed (can be negative!)
+      l_spd_RX = std::stoi(line);
+    else if (pos == 'r') // set right RX speed
+      r_spd_RX = std::stoi(line);
+  }
+  catch (const std::invalid_argument& e){
+    printf("ERR: RX data invalid arg\n");
+  }
+  catch (const std::out_of_range& e){
+    printf("ERR: RX data out of range\n");
+  }
+}
+
 void Com::interpretRXData(std::string RX_data){
   //NOTE: be careful about how fast this refresh really is...
   data_RX_vec.clear();
@@ -181,7 +201,7 @@ void Com::interpretRXData(std::string RX_data){
         interpretEncoder(tokens[2], 'r');
       }
     }
-    if (line[0] == 't'){
+    else if (line[0] == 't'){
       // tokenize time data to [lastUpdateMicrosecs and secsSinceLastUpdate]
       std::stringstream ss(line); // convert line into a string stream
       std::string tmp_str;
@@ -193,6 +213,20 @@ void Com::interpretRXData(std::string RX_data){
       if (tokens.size() > 2){
         interpretTime(tokens[1], 'u');
         interpretTime(tokens[2], 's');
+      }
+    }
+    else if (line[0] == 's'){
+      // tokenize time data to [lastUpdateMicrosecs and secsSinceLastUpdate]
+      std::stringstream ss(line); // convert line into a string stream
+      std::string tmp_str;
+      std::vector<std::string> tokens;
+
+      while(getline(ss, tmp_str, ';')){tokens.push_back(tmp_str);}
+
+      //NOTE: check if these indices in the vector even exist first
+      if (tokens.size() > 2){
+        interpretSpeed(tokens[1], 'u');
+        interpretSpeed(tokens[2], 's');
       }
     }
   }

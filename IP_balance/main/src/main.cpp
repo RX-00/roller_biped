@@ -101,6 +101,8 @@ int main(int argc, char** argv){
   std::cout << "Got right encoder val:" << comms.getRightEncoder() << std::endl;
   std::cout << "Got usec time: " << comms.getTimeUsec() << std::endl;
   std::cout << "Got sec time: " << comms.getTimeSec() << std::endl;
+  std::cout << "Sent left speed: " << comms.getLSpd() << std::endl;
+  std::cout << "RX left speed: " << comms.getLSpdRX() << std::endl;
 
   return 0;
 }
