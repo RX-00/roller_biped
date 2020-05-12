@@ -15,20 +15,37 @@
 #include <stdio.h>
 #include <cmath>
 #include <string>
-
 #include <unistd.h>
 #include <sys/timeb.h>
 #include <time.h>
 #include <sys/time.h>
+#include <chrono>
+#include <thread>
 
 #include "rs232.h"
+#include "RTIMULib.h"
 
 #define BUF_SIZE 128
 #define PORT_NUM 24 // NOTE: using ttyACM0 -> port number 24
 #define BAUDRATE 115200
+#define TX_TIME    1500 // usec -> 1.5 sec for stable condition
+#define RX_TIME    100  // waits for reply 100ms
+#define CYCLE_TIME 100  // sleep for 100ms
+
 
 
 int main(int argc, char** argv){
+
+  // Setup IMU
+  int sampleCount = 0;
+  int sampleRate = 0;
+  uint64_t rateTimer;
+  uint64_t displayTimer;
+  uint64_t now;
+
+  RTIMUSettings *settings = new RTIMUSettings("RTIMULib");
+
+  // Setup comms
   Com comms(BUF_SIZE, PORT_NUM, BAUDRATE);
   char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
   char str_send[1][BUF_SIZE];
@@ -38,22 +55,20 @@ int main(int argc, char** argv){
     printf("Cannot open port\n");
     return 0;
   }
+  std::this_thread::sleep_for(std::chrono::milliseconds(TX_TIME));
 
-  usleep(500000 * 2); // usec -> 500ms for stable condition
 
-  for(int j = 0; j < 10; j++){ // NOTE: This would go on forever in the main loop
+  // Main loop
+  for(int j = 0; j < 10; j++){
     // dummy velocity data
     comms.setSpd((rand() % (255 * 2 + 1) + (-255)), (rand() % (255 * 2 + 1) + (-255)));
     comms.formatData();
-
-    // then put it into str_send
     strcpy(str_send[0], comms.data.c_str());
-
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
     printf("Sent to mega: %s \n", str_send[0]);
-    usleep(100000); // waits for reply 100ms
 
-    // gets chars from serial port (if any)
+    std::this_thread::sleep_for(std::chrono::milliseconds(RX_TIME));
+
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
     if(n > 0){
       str_recv[n] = 0; // always put a "null" at the end of a string
@@ -61,7 +76,7 @@ int main(int argc, char** argv){
       std::string RX_data((char *)str_recv);
       comms.interpretRXData(RX_data);
     }
-    usleep(100000 * 5); // sleep for 100ms
+    std::this_thread::sleep_for(std::chrono::milliseconds(CYCLE_TIME));
   }
 
   RS232_CloseComport(PORT_NUM);
