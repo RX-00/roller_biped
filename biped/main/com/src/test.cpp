@@ -39,7 +39,7 @@ int main(int argc, char** argv){
     return 0;
   }
 
-  usleep(500000); // usec -> 500ms for stable condition
+  usleep(500000 * 2); // usec -> 500ms for stable condition
 
   for(int j = 0; j < 10; j++){ // NOTE: This would go on forever in the main loop
     // dummy velocity data
@@ -50,16 +50,18 @@ int main(int argc, char** argv){
     strcpy(str_send[0], comms.data.c_str());
 
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
+    printf("Sent to mega: %s \n", str_send[0]);
     usleep(100000); // waits for reply 100ms
 
     // gets chars from serial port (if any)
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
     if(n > 0){
       str_recv[n] = 0; // always put a "null" at the end of a string
+      printf("RX: %s\n", (char *)str_recv);
       std::string RX_data((char *)str_recv);
       comms.interpretRXData(RX_data);
     }
-    usleep(100000); // sleep for 100ms
+    usleep(100000 * 5); // sleep for 100ms
   }
 
   RS232_CloseComport(PORT_NUM);

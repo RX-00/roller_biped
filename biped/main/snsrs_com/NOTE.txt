@@ -1,0 +1,7 @@
+Go to dir of RTIMULib lib contents in include and then enter:
+	mkdir build
+	cd build
+	cmake ..
+	make -j4
+	sudo make install
+	sudo ldconfig

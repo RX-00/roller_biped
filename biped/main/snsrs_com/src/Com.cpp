@@ -125,21 +125,37 @@ void Com::setSpd(int lspd, int rspd){
 
 // parse and interpret time data
 void Com::interpretTime(std::string line, char type){
-  if (type == 'u'){ // set last update microseconds
-    last_update_us = std::stoi(line);
+  int us_prev = last_update_us;
+  int sec_prev = sec_since_last_update;
+  try{
+    if (type == 'u') // set last update microseconds
+      last_update_us = std::stoi(line);
+    else if (type == 's') // set secs since last update
+      sec_since_last_update = std::stoi(line);
   }
-  if (type == 's'){ // set secs since last update
-    sec_since_last_update = std::stoi(line);
+  catch(const std::invalid_argument& e){
+    printf("ERR: RX data invalid arg\n");
+  }
+  catch(const std::out_of_range& e){
+    printf("ERR: RX data out of range\n");
   }
 }
 
 // parse and interpret encoder data
 void Com::interpretEncoder(std::string line, char pos){
-  if (pos == 'l'){ // set left encoder
-    l_encoder = std::stoi(line);
+  int l_enc_prev = l_encoder;
+  int r_enc_prev = r_encoder;
+  try {
+    if (pos == 'l') // set left encoder (can be negative!)
+      l_encoder = std::stoi(line);
+    else if (pos == 'r') // set right encoder
+      r_encoder = std::stoi(line);
   }
-  else if (pos == 'r'){ // set right encoder
-    r_encoder = std::stoi(line);
+  catch (const std::invalid_argument& e){
+    printf("ERR: RX data invalid arg\n");
+  }
+  catch (const std::out_of_range& e){
+    printf("ERR: RX data out of range\n");
   }
 }
 

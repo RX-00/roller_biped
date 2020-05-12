@@ -1,4 +1,6 @@
 
+RTIMULIBPATH = /RTIMULib
+
 CXX ?= g++
 
 # path #
