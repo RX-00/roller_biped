@@ -22,8 +22,9 @@
 #include <chrono>
 #include <thread>
 
-#include "rs232.h"
-#include "RTIMULib.h"
+#include "rs232.h"              // serial TX RX
+#include "RTIMULib.h"           // IMU
+#include "RPMSerialInterface.h" // servos
 
 #define BUF_SIZE 128
 #define PORT_NUM 24 // NOTE: using ttyACM0 -> port number 24
@@ -42,8 +43,23 @@ int main(int argc, char** argv){
   uint64_t rateTimer;
   uint64_t displayTimer;
   uint64_t now;
-
   RTIMUSettings *settings = new RTIMUSettings("RTIMULib");
+  RTIMU *imu = RTIMU::createIMU(settings);
+
+  if ((imu == NULL) || (imu->IMUType() == RTIMU_TYPE_NULL)) {
+    printf("No IMU found\n");
+    exit(1);
+  }
+
+  imu->IMUInit();
+  // this is a convenient place to change fusion parameters
+  imu->setSlerpPower(0.02);
+  imu->setGyroEnable(true);
+  imu->setAccelEnable(true);
+  imu->setCompassEnable(true);
+  // set up for rate timer
+  rateTimer = displayTimer = RTMath::currentUSecsSinceEpoch();
+
 
   // Setup comms
   Com comms(BUF_SIZE, PORT_NUM, BAUDRATE);
