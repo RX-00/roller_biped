@@ -1,4 +1,3 @@
-
 /* Class for sending and receiving of data between the computer and microcontroller
  * also will parse and interpret the data RX. from the microcontroller
  *

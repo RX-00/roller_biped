@@ -48,7 +48,7 @@ int main(int argc, char** argv){
   //  Or, you can create the .ini in some other directory by using:
   //      RTIMUSettings *settings = new RTIMUSettings("<directory path>", "RTIMULib");
   //  where <directory path> is the path to where the .ini file is to be loaded/saved
-
+  /*
   RTIMUSettings *settings = new RTIMUSettings("RTIMULib");
 
   RTIMU *imu = RTIMU::createIMU(settings);
@@ -57,7 +57,7 @@ int main(int argc, char** argv){
     printf("No IMU found\n");
     exit(1);
   }
-  /*
+  
   imu->IMUInit();
   // change fusion parameters
   imu->setSlerpPower(0.02);
