@@ -71,7 +71,8 @@ int main(int argc, char** argv){
     printf("Cannot open port\n");
     return 0;
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(TX_TIME));
+  usleep(500000 * 2); // usec -> 500ms for stable condition
+  //std::this_thread::sleep_for(std::chrono::milliseconds(TX_TIME));
 
 
   // Main loop
@@ -81,18 +82,19 @@ int main(int argc, char** argv){
     comms.formatData();
     strcpy(str_send[0], comms.data.c_str());
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
-    printf("Sent to mega: %s \n", str_send[0]);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(RX_TIME));
+    usleep(100000); // waits for reply 100ms
+    //std::this_thread::sleep_for(std::chrono::milliseconds(RX_TIME));
 
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
     if(n > 0){
       str_recv[n] = 0; // always put a "null" at the end of a string
-      printf("RX: %s\n", (char *)str_recv);
+      //printf("RX: %s\n", (char *)str_recv);
       std::string RX_data((char *)str_recv);
       comms.interpretRXData(RX_data);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(CYCLE_TIME));
+    usleep(100000 * 5); // sleep for 100ms
+    //std::this_thread::sleep_for(std::chrono::milliseconds(CYCLE_TIME));
   }
 
   RS232_CloseComport(PORT_NUM);
