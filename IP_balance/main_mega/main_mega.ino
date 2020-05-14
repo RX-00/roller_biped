@@ -8,6 +8,8 @@
  * THE EXPECTED SIZE OF ARRAY SHOULD BE 11
  */
 
+ // TODO: get IMU working on this and get independent IP balancer up
+
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>

@@ -34,7 +34,28 @@
 #define RX_TIME    100  // waits for reply 100ms
 #define CYCLE_TIME 100  // sleep for 100ms
 
-//TODO: IMPLEMENT AND TEST OUT RPM, maybe have a separate class added into project for the Utils time class and TODO: test that class for delaying the serial interface
+#define SRVO_MAX   8000
+#define SRVO_MIN   4000
+#define LEFT_HIP   1
+#define RIGHT_HIP  0
+#define LEFT_KNEE  3
+#define RIGHT_KNEE 2
+
+
+//TODO: test that class for delaying the serial interface
+//TODO: program in default crouch position
+
+
+// default crouching position for the robot
+void default_pos(RPM::SerialInterface *serialInterface){
+  std::cout << "Moving into default position in 5 seconds..." << std::endl;
+  Utils::sleep(5000);
+  serialInterface -> setTargetCP(LEFT_HIP, SRVO_MIN);
+  serialInterface -> setTargetCP(RIGHT_HIP, SRVO_MAX);
+  serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
+  serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
+  Utils::sleep(1500);
+}
 
 // function to test device over serial w/ sinusoidal signals
 void sinusoid_signal(RPM::SerialInterface *serialInterface, unsigned char channelNumber){
@@ -70,7 +91,7 @@ RPM::SerialInterface * serialInterfaceInit(unsigned char deviceNumber, unsigned 
     std::cout << "Terminating program..." << std::endl;
     std::exit(EXIT_FAILURE);
   }
-  std::cout << "Serial interface initiated" << std::endl;
+  std::cout << "Serial interface initiated\n" << std::endl;
   return serialInterface;
 }
 
@@ -112,7 +133,7 @@ int main(int argc, char** argv){
   char mode[] = {'8', 'N', '1', 0}; // 8 data bits, no parity, 1 stop bit
   char str_send[1][BUF_SIZE];
   unsigned char str_recv[BUF_SIZE];
-
+  std::cout << "Opening serial port...\n\n" << std::endl;
   if (RS232_OpenComport(PORT_NUM, BAUDRATE, mode, 0)){ // 0 is no flowctrl
     printf("Cannot open port\n");
     return 0;
@@ -120,6 +141,8 @@ int main(int argc, char** argv){
   usleep(500000 * 2); // usec -> 500ms for stable condition
   //std::this_thread::sleep_for(std::chrono::milliseconds(TX_TIME));
 
+  //setup default leg position
+  default_pos(servosInterface);
 
   // Main loop
   for(int j = 0; j < 10; j++){
