@@ -25,17 +25,63 @@
 #include "rs232.h"              // serial TX RX
 #include "RTIMULib.h"           // IMU
 #include "RPMSerialInterface.h" // servos
+#include "Utils.h"              // servo utility class for sleep & time methods
 
-#define BUF_SIZE 128
-#define PORT_NUM 24 // NOTE: using ttyACM0 -> port number 24
-#define BAUDRATE 115200
+#define BUF_SIZE   128
+#define PORT_NUM   24 // NOTE: using ttyACM0 -> port number 24
+#define BAUDRATE   115200
 #define TX_TIME    1500 // usec -> 1.5 sec for stable condition
 #define RX_TIME    100  // waits for reply 100ms
 #define CYCLE_TIME 100  // sleep for 100ms
 
+//TODO: IMPLEMENT AND TEST OUT RPM, maybe have a separate class added into project for the Utils time class and TODO: test that class for delaying the serial interface
+
+// function to test device over serial w/ sinusoidal signals
+void sinusoid_signal(RPM::SerialInterface *serialInterface, unsigned char channelNumber){
+  // Generate a sinusoid signal to send to the PololuInterface
+  std::cout << "Sending sinusoidal signal to device to test device..." << std::endl;
+	const float pi = 3.141592653589793f;
+	const unsigned int channelMinValue = 4000;
+	const unsigned int channelMaxValue = 8000;
+	const unsigned int channelValueRange = channelMaxValue - channelMinValue;
+	const unsigned int signalPeriodInMs = 2000;
+	unsigned int time0 = Utils::getTimeAsMilliseconds();
+	unsigned int timeSinceStart = 0;
+	while ( timeSinceStart < 5000 ){
+    float k = sin( (pi*2)/signalPeriodInMs * timeSinceStart ) * (float)(channelValueRange/2);
+    float channelValue = (float)channelMinValue + (float)channelValueRange/2 + k;
+    printf("\rchannelValue=%d", (unsigned int)channelValue );
+    serialInterface->setTargetCP( channelNumber, (unsigned short)channelValue );
+    timeSinceStart = Utils::getTimeAsMilliseconds() - time0;
+    Utils::sleep(5);
+  }
+}
+
+// function to create serial interface for the maestro servo controller
+RPM::SerialInterface * serialInterfaceInit(unsigned char deviceNumber, unsigned char channelNumber, std::string portName){
+  // create the interface for the maestro
+  std::cout << "Serial interface init..." << std::endl;
+	unsigned int baudRate = 115200;
+	printf("Creating serial interface '%s' at %d bauds\n", portName.c_str(), baudRate);
+	std::string errorMessage;
+	RPM::SerialInterface* serialInterface = RPM::SerialInterface::createSerialInterface( portName, baudRate, &errorMessage );
+	if ( !serialInterface ){
+    printf("Failed to create serial interface. %s\n", errorMessage.c_str());
+    std::cout << "Terminating program..." << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  std::cout << "Serial interface initiated" << std::endl;
+  return serialInterface;
+}
 
 
 int main(int argc, char** argv){
+  // Serial servo interface
+  unsigned char deviceNumber = 12;
+	unsigned char channelNumber = 2;
+  std::string portName = "/dev/ttyACM1";
+  RPM::SerialInterface *servosInterface = serialInterfaceInit(deviceNumber, channelNumber, portName);
+  sinusoid_signal(servosInterface, channelNumber);
 
   // Setup IMU
   int sampleCount = 0;
