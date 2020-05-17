@@ -34,8 +34,9 @@
 #define RX_TIME    100  // waits for reply 100ms
 #define CYCLE_TIME 100  // sleep for 100ms
 
-#define SRVO_MAX   8000
-#define SRVO_MIN   4000
+//NOTE: modified the RPM library to allow for greater servo range
+#define SRVO_MAX   10000
+#define SRVO_MIN   2000
 #define LEFT_HIP   1
 #define RIGHT_HIP  0
 #define LEFT_KNEE  3
@@ -43,8 +44,6 @@
 
 
 //TODO: test that class for delaying the serial interface
-//TODO: program in default crouch position
-
 
 // default crouching position for the robot
 void default_pos(RPM::SerialInterface *serialInterface){
@@ -76,6 +75,7 @@ void sinusoid_signal(RPM::SerialInterface *serialInterface, unsigned char channe
     timeSinceStart = Utils::getTimeAsMilliseconds() - time0;
     Utils::sleep(5);
   }
+  printf("\n");
 }
 
 // function to create serial interface for the maestro servo controller
@@ -102,17 +102,17 @@ int main(int argc, char** argv){
 	unsigned char channelNumber = 11;
   std::string portName = "/dev/ttyACM1";
   RPM::SerialInterface *servosInterface = serialInterfaceInit(deviceNumber, channelNumber, portName);
-  //sinusoid_signal(servosInterface, channelNumber);
+  sinusoid_signal(servosInterface, channelNumber);
   servosInterface -> SerialInterface::mMinChannelValue = SRVO_MIN;
   servosInterface -> SerialInterface::mMaxChannelValue = SRVO_MAX;
 
   for (int i = 0; i < 5; i++){
     servosInterface -> setTargetCP(11, SRVO_MIN);
-    Utils::sleep(500);
-    servosInterface -> setTargetCP(11, SRVO_MAX - SRVO_MIN);
-    Utils::sleep(500);
+    Utils::sleep(1000);
+    servosInterface -> setTargetCP(11, 6000);
+    Utils::sleep(1000);
     servosInterface -> setTargetCP(11, SRVO_MAX);
-    Utils::sleep(500);
+    Utils::sleep(1000);
   }
   return 0;
 
