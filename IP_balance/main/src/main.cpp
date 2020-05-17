@@ -48,12 +48,12 @@
 
 // default crouching position for the robot
 void default_pos(RPM::SerialInterface *serialInterface){
-  std::cout << "Moving into default position in 5 seconds..." << std::endl;
-  Utils::sleep(5000);
+  std::cout << "Moving into default position in 1 seconds..." << std::endl;
+  Utils::sleep(1000);
   serialInterface -> setTargetCP(LEFT_HIP, SRVO_MIN);
   serialInterface -> setTargetCP(RIGHT_HIP, SRVO_MAX);
-  serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
-  serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
+  //serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
+  //serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
   Utils::sleep(1500);
 }
 
@@ -62,8 +62,8 @@ void sinusoid_signal(RPM::SerialInterface *serialInterface, unsigned char channe
   // Generate a sinusoid signal to send to the PololuInterface
   std::cout << "Sending sinusoidal signal to device to test device..." << std::endl;
 	const float pi = 3.141592653589793f;
-	const unsigned int channelMinValue = 4000;
-	const unsigned int channelMaxValue = 8000;
+	const unsigned int channelMinValue = SRVO_MIN;
+	const unsigned int channelMaxValue = SRVO_MAX;
 	const unsigned int channelValueRange = channelMaxValue - channelMinValue;
 	const unsigned int signalPeriodInMs = 2000;
 	unsigned int time0 = Utils::getTimeAsMilliseconds();
@@ -99,10 +99,22 @@ RPM::SerialInterface * serialInterfaceInit(unsigned char deviceNumber, unsigned 
 int main(int argc, char** argv){
   // Serial servo interface
   unsigned char deviceNumber = 12;
-	unsigned char channelNumber = 2;
+	unsigned char channelNumber = 11;
   std::string portName = "/dev/ttyACM1";
   RPM::SerialInterface *servosInterface = serialInterfaceInit(deviceNumber, channelNumber, portName);
-  sinusoid_signal(servosInterface, channelNumber);
+  //sinusoid_signal(servosInterface, channelNumber);
+  servosInterface -> SerialInterface::mMinChannelValue = SRVO_MIN;
+  servosInterface -> SerialInterface::mMaxChannelValue = SRVO_MAX;
+
+  for (int i = 0; i < 5; i++){
+    servosInterface -> setTargetCP(11, SRVO_MIN);
+    Utils::sleep(500);
+    servosInterface -> setTargetCP(11, SRVO_MAX - SRVO_MIN);
+    Utils::sleep(500);
+    servosInterface -> setTargetCP(11, SRVO_MAX);
+    Utils::sleep(500);
+  }
+  return 0;
 
   // Setup IMU
   int sampleCount = 0;
@@ -143,6 +155,8 @@ int main(int argc, char** argv){
 
   //setup default leg position
   default_pos(servosInterface);
+  std::cout << "Default position test exit" << std::endl;
+  return 0;
 
   // Main loop
   for(int j = 0; j < 10; j++){
@@ -167,6 +181,8 @@ int main(int argc, char** argv){
   }
 
   RS232_CloseComport(PORT_NUM);
+  delete servosInterface;
+  servosInterface = NULL;
 
   std::cout << "\n\nGot left encoder val: " << comms.getLeftEncoder() << std::endl;
   std::cout << "Got right encoder val:" << comms.getRightEncoder() << std::endl;

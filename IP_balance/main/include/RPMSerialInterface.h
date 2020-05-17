@@ -46,7 +46,20 @@ namespace RPM
 */
 class SerialInterface
 {
+private:
+	//static const unsigned short mMinChannelValue = 3968;
+	//static const unsigned short mMaxChannelValue = 8000;
+
+	virtual bool writeBytes( const unsigned char* data, unsigned int dataSizeInBytes ) = 0;
+	virtual bool readBytes( unsigned char* data, unsigned int dataSizeInBytes ) = 0;
+
+	std::string mErrorMessage;
+
+
 public:
+  static unsigned short mMinChannelValue;
+	static unsigned short mMaxChannelValue;
+
 	// Create a concrete platform-specific SerialInterface. 
 	// Return NULL if the interface couldn't be created and set the optional error message.
 	static SerialInterface* createSerialInterface( const std::string& portName, unsigned int baudRate, std::string* errorMessage=NULL );
@@ -57,14 +70,14 @@ public:
 
 	// Destructor
 	virtual ~SerialInterface();
-			
+
 	// Indicates whether the serial port has been successfully open at construction
 	virtual bool isOpen() const = 0;
 
-	// Return the minimum valid channel value in 0.25 microsecond units 
+	// Return the minimum valid channel value in 0.25 microsecond units
 	static unsigned short getMinChannelValue()  { return mMinChannelValue; }
-	
-	// Return the maximum valid channel value in 0.25 microsecond units 
+
+	// Return the maximum valid channel value in 0.25 microsecond units
 	static unsigned short getMaxChannelValue()  { return mMaxChannelValue; }
 
 	// Set the target position of a channel to a given value in 0.25 microsecond units
@@ -121,15 +134,6 @@ protected:
 	
 	bool checkPortIsOpen() const;                             // And update error message if not
 	bool checkValidTargetValue(unsigned short target) const;  // Same here
-
-private:
-	static const unsigned short mMinChannelValue = 3968;
-	static const unsigned short mMaxChannelValue = 8000;
-	
-	virtual bool writeBytes( const unsigned char* data, unsigned int dataSizeInBytes ) = 0;
-	virtual bool readBytes( unsigned char* data, unsigned int dataSizeInBytes ) = 0;
-
-	std::string mErrorMessage;
 };
 
 }
