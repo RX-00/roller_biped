@@ -49,11 +49,27 @@
 void default_pos(RPM::SerialInterface *serialInterface){
   std::cout << "Moving into default position in 1 seconds..." << std::endl;
   Utils::sleep(1000);
-  serialInterface -> setTargetCP(LEFT_HIP, SRVO_MIN);
-  serialInterface -> setTargetCP(RIGHT_HIP, SRVO_MAX);
-  //serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
-  //serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
+  serialInterface -> setTargetCP(LEFT_HIP, 3000);  // LOWER  (back)
+  serialInterface -> setTargetCP(RIGHT_HIP, 9000); // HIGHER (back)
+  serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
+  serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
   Utils::sleep(1500);
+}
+
+void servo_test(RPM::SerialInterface *servosInterface, unsigned char channelNumber){
+  std::cout << "Testing servo number: " << 11 << std::endl;
+  for (int i = 0; i < 5; i++){
+    std::cout << "min position" << std::endl;
+    servosInterface -> setTargetCP(channelNumber, SRVO_MIN);
+    Utils::sleep(1000);
+    std::cout << "middle position" << std::endl;
+    servosInterface -> setTargetCP(channelNumber, 6000);
+    Utils::sleep(1000);
+    std::cout << "max position" << std::endl;
+    servosInterface -> setTargetCP(channelNumber, SRVO_MAX);
+    Utils::sleep(1000);
+  }
+  exit(1);
 }
 
 // function to test device over serial w/ sinusoidal signals
@@ -102,19 +118,11 @@ int main(int argc, char** argv){
 	unsigned char channelNumber = 11;
   std::string portName = "/dev/ttyACM1";
   RPM::SerialInterface *servosInterface = serialInterfaceInit(deviceNumber, channelNumber, portName);
-  sinusoid_signal(servosInterface, channelNumber);
   servosInterface -> SerialInterface::mMinChannelValue = SRVO_MIN;
   servosInterface -> SerialInterface::mMaxChannelValue = SRVO_MAX;
 
-  for (int i = 0; i < 5; i++){
-    servosInterface -> setTargetCP(11, SRVO_MIN);
-    Utils::sleep(1000);
-    servosInterface -> setTargetCP(11, 6000);
-    Utils::sleep(1000);
-    servosInterface -> setTargetCP(11, SRVO_MAX);
-    Utils::sleep(1000);
-  }
-  return 0;
+  //sinusoid_signal(servosInterface, channelNumber);
+  //servo_test(servosInterface, channelNumber);
 
   // Setup IMU
   int sampleCount = 0;
@@ -155,8 +163,6 @@ int main(int argc, char** argv){
 
   //setup default leg position
   default_pos(servosInterface);
-  std::cout << "Default position test exit" << std::endl;
-  return 0;
 
   // Main loop
   for(int j = 0; j < 10; j++){
