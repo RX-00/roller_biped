@@ -31,8 +31,8 @@
 #define PORT_NUM   24 // NOTE: using ttyACM0 -> port number 24
 #define BAUDRATE   115200
 #define TX_TIME    1500 // usec -> 1.5 sec for stable condition
-#define RX_TIME    100  // waits for reply 100ms
-#define CYCLE_TIME 100  // sleep for 100ms
+#define RX_TIME    150  // waits for reply 100ms
+#define CYCLE_TIME 150  // sleep for 100ms
 
 //NOTE: modified the RPM library to allow for greater servo range
 #define SRVO_MAX   10000
@@ -121,9 +121,6 @@ int main(int argc, char** argv){
   servosInterface -> SerialInterface::mMinChannelValue = SRVO_MIN;
   servosInterface -> SerialInterface::mMaxChannelValue = SRVO_MAX;
 
-  //sinusoid_signal(servosInterface, channelNumber);
-  //servo_test(servosInterface, channelNumber);
-
   // Setup IMU
   int sampleCount = 0;
   int sampleRate = 0;
@@ -132,12 +129,10 @@ int main(int argc, char** argv){
   uint64_t now;
   RTIMUSettings *settings = new RTIMUSettings("RTIMULib");
   RTIMU *imu = RTIMU::createIMU(settings);
-
   if ((imu == NULL) || (imu->IMUType() == RTIMU_TYPE_NULL)) {
     printf("No IMU found\n");
     exit(1);
   }
-
   imu->IMUInit();
   // this is a convenient place to change fusion parameters
   imu->setSlerpPower(0.02);
@@ -146,7 +141,6 @@ int main(int argc, char** argv){
   imu->setCompassEnable(true);
   // set up for rate timer
   rateTimer = displayTimer = RTMath::currentUSecsSinceEpoch();
-
 
   // Setup comms
   Com comms(BUF_SIZE, PORT_NUM, BAUDRATE);
@@ -158,8 +152,10 @@ int main(int argc, char** argv){
     printf("Cannot open port\n");
     return 0;
   }
-  usleep(500000 * 2); // usec -> 500ms for stable condition
+  //usleep(500000 * 2); // usec -> 1000ms for stable condition
   //std::this_thread::sleep_for(std::chrono::milliseconds(TX_TIME));
+  Utils::sleep(TX_TIME);
+
 
   //setup default leg position
   default_pos(servosInterface);
@@ -172,8 +168,9 @@ int main(int argc, char** argv){
     strcpy(str_send[0], comms.data.c_str());
     RS232_cputs(PORT_NUM, str_send[0]); // sends string on serial
 
-    usleep(100000); // waits for reply 100ms
+    //usleep(100000); // waits for reply 100ms
     //std::this_thread::sleep_for(std::chrono::milliseconds(RX_TIME));
+    Utils::sleep(RX_TIME);
 
     int n = RS232_PollComport(PORT_NUM, str_recv, (int)BUF_SIZE);
     if(n > 0){
@@ -182,8 +179,9 @@ int main(int argc, char** argv){
       std::string RX_data((char *)str_recv);
       comms.interpretRXData(RX_data);
     }
-    usleep(100000 * 5); // sleep for 100ms
+    //usleep(100000 * 5); // sleep for 100ms
     //std::this_thread::sleep_for(std::chrono::milliseconds(CYCLE_TIME));
+    Utils::sleep(CYCLE_TIME);
   }
 
   RS232_CloseComport(PORT_NUM);
