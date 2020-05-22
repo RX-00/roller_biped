@@ -13,6 +13,17 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include "I2Cdev.h"
+#include "Wire.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+#include "PID_v1.h"
+
+// Using a simple PID
+#define LOG_INPUT 0
+#define MANUAL_TUNING 0
+#define LOG_PID_CONSTANTS 0 // MANUAL_TUNING must be 1 for this
+#define MOVE_BACK_AND_FORTH 0
+#define MIN_ABS_SPD 30
 
 // Reset Pin, if HIGH then arduino mega  will reset
 #define RESET_PIN 7
@@ -53,40 +64,106 @@ float secsSinceLastUpdate = 0;
 // Motor speed from mega
 int motorLspd = 0;
 int motorRspd = 0;
+int _currentSpeed = 0;
 
 // Motor speed inputs from the pc over serial
 int motorLspd_RX = 0;
 int motorRspd_RX = 0;
 bool motorOverride = false;
 
+// MPU
+MPU6050 mpu;
+// control & status variables for mpu
+bool dmpReady = false;  // if DMP init success -> true
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from the MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes in current FIFO 
+// orientation & motion variables
+Quaternion q;           // []                 quaternion
+VectorFloat gravity;    // [x, y, z]          gravity vector
+float yaw_pitch_roll[3]; // [yaw, pitch, roll] yaw, pitch, roll container & gravity vector
 
-//====== SETUP FUNCTION ======
-void setup(){
-	// Init Serial port with 115200 buad rate
-  Serial.begin(115200);
-	setupEncoders();
-  setupMotors();
-  setupResetPin();
+// PID
+#if MANUAL_TUNING
+double kp , ki, kd;
+double prevKp, prevKi, prevKd;
+#endif
+double originalSetpoint = 174.29;
+double setpoint = originalSetpoint;
+double movingAngleOffset = 0.3;
+double input, output;
+int moveState = 0; //0 = balance; 1 = back; 2 = forth
+
+#if MANUAL_TUNING
+  PID pid(&input, &output, &setpoint, 0, 0, 0, DIRECT);
+#else
+  PID pid(&input, &output, &setpoint, 70, 240, 1.9, DIRECT);
+#endif
+
+// timers
+long time1Hz = 0;
+long time5Hz = 0;
+
+
+// ====== MPU FUNCTIONS ======
+volatile bool mpuInterrupt = false; // indicate if MPU interrupt pin is high
+void dmpDataReady(){
+  mpuInterrupt = true;
+}
+
+// ===== CONTROL FUNCTIONS =====
+void loopAt1Hz(){
+  #if MANUAL_TUNING
+  setPIDTuningValues();
+  #endif
+}
+
+void loopAt5Hz(){
+  #if MOVE_BACK_AND_FORTH
+  moveBackForth();
+  #endif
+}
+
+void moveBackForth(){
+  moveState++;
+  if (moveState > 2) moveState = 0;
+  if (moveState == 0)
+    setpoint = originalSetpoint;
+    
+  else if (moveState == 1)
+    setpoint = originalSetpoint - movingAngleOffset;
+  else
+    setpoint = originalSetpoint + movingAngleOffset;
+}
+
+// PID tuning (use 3 potentiometers)
+#if MANUAL_TUNING
+void setPIDTuningValues()
+{
+  readPIDTuningValues();
+  if (kp != prevKp || ki != prevKi || kd != prevKd)
+    {
+#if LOG_PID_CONSTANTS
+      Serial.print(kp);Serial.print(", ");Serial.print(ki);Serial.print(", ");Serial.println(kd);
+#endif
+      pid.SetTunings(kp, ki, kd);
+      prevKp = kp; prevKi = ki; prevKd = kd;
+    }
 }
 
 
-//====== MAIN LOOP ======
-void loop(){
-  readSerialInput(); // update mega of motor spd from pi
-  updateTime();      // update time to pi
-  updateEncoders();  // update encoders to pi
-  if (motorOverride){
-    updateMotors(motorLspd_RX, motorRspd_RX);
-    delay(990); // delay 990 ms
-    motorOverride = false;
-  }
-  else{
-    updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
-    updateMotors(motorLspd, motorRspd);
-  }
+void readPIDTuningValues()
+{
+  int potKp = analogRead(A0);
+  int potKi = analogRead(A1);
+  int potKd = analogRead(A2);
+  kp = map(potKp, 0, 1023, 0, 25000) / 100.0; //0 - 250
+  ki = map(potKi, 0, 1023, 0, 100000) / 100.0; //0 - 1000
+  kd = map(potKd, 0, 1023, 0, 500) / 100.0; //0 - 5
 }
-
-
+#endif
 
 //====== SERIAL FUNCTIONS ======
 // Read in input from pi
@@ -94,7 +171,6 @@ void readSerialInput(){
   if (Serial.available() > 0){
     // NOTE: incoming data should be in form: "l+###r-###" w/ + & - interchangeable
     String data = Serial.readStringUntil('\n');
-    
     // parse through string to get motor speed updates
     char data_char[data.length() + 1];
     strcpy(data_char, data.c_str()); // use strcpy() to copy the c-string into a char array
@@ -247,6 +323,27 @@ void updateMotors(int mls, int mrs){
   moveLMotor(mrs);
 }
 
+void moveMotors(int speed, int minAbsSpeed){
+  int direction = 1;
+  if (speed < 0){
+    direction = -1;
+    speed = min(speed, direction * MIN_ABS_SPD);
+    speed = max(speed, -255);
+  }
+  else{
+    speed = max(speed, MIN_ABS_SPD);
+    speed = min(speed, 255);
+  }
+
+  if (speed == _currentSpeed) return;
+
+  int realSpeed = max(MIN_ABS_SPD, abs(speed));
+
+  updateMotors(realSpeed, realSpeed);
+
+  _currentSpeed = direction * realSpeed;
+}
+
 void updateMotorsPi(int mls, int mrs){
   Serial.print("s");
   Serial.print(";");
@@ -269,4 +366,145 @@ void resetBoard(){
   Serial.println();
   delay(1000);
   digitalWrite(RESET_PIN, LOW);
+}
+
+
+
+
+
+
+
+//====== SETUP FUNCTION ======
+void setup(){
+  Wire.begin();
+  TWBR = 24; // 400kHz I2C clock (200kHz if CPU is 8MHz)
+	// Init Serial port with 115200 buad rate
+  Serial.begin(115200);
+  //init I2C devices
+  mpu.initialize();
+  // verify connection
+  Serial.println(F("Testing device connections..."));
+  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  devStatus = mpu.dmpInitialize();
+  // supply your own gyro offsets here, scaled for min sensitivity
+  mpu.setXGyroOffset(220);
+  mpu.setYGyroOffset(76);
+  mpu.setZGyroOffset(-85);
+  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+
+  // make sure it worked (returns 0 if so)
+  if (devStatus == 0){
+    // turn on the DMP, now that it's ready
+    Serial.println(F("Enabling DMP..."));
+    mpu.setDMPEnabled(true);
+
+    // enable Arduino interrupt detection
+    Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+    attachInterrupt(0, dmpDataReady, RISING);
+    mpuIntStatus = mpu.getIntStatus();
+
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    Serial.println(F("DMP ready! Waiting for first interrupt..."));
+    dmpReady = true;
+
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+    //setup PID
+    pid.SetMode(AUTOMATIC);
+    pid.SetSampleTime(10);
+    pid.SetOutputLimits(-255, 255);  
+  }
+  else{
+    // ERROR!
+    // 1 = initial memory load failed
+    // 2 = DMP configuration updates failed
+    // (if it's going to break, usually the code will be 1)
+    Serial.print(F("DMP Initialization failed (code "));
+    Serial.print(devStatus);
+    Serial.println(F(")"));
+  }
+
+	setupEncoders();
+  setupMotors();
+  setupResetPin();
+}
+
+
+//====== MAIN LOOP ======
+void loop(){
+  // if programming failed, don't try to do anything
+  if (!dmpReady) return;
+  // wait for MPU interrupt or extra packet(s) available
+  while (!mpuInterrupt && fifoCount < packetSize){
+    // no mpu data - perform PID calculations and output to motors
+    pid.Compute();
+    // ===========================================================
+    // TODO: MOVE MOTORS OUTPUT WITH SLOW SPEED
+    // ===========================================================
+    moveMotors(output, MIN_ABS_SPD);
+
+
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - time1Hz >= 1000){
+      loopAt1Hz();
+      time1Hz = currentMillis;
+    }
+    if (currentMillis - time5Hz >= 5000){
+      loopAt5Hz();
+      time5Hz = currentMillis;
+    }
+  }
+
+  // reset interrupt flag and get INT_STATUS byte
+  mpuInterrupt = false;
+  mpuIntStatus = mpu.getIntStatus();
+
+  // get current FIFO count
+  fifoCount = mpu.getFIFOCount();
+
+  // check for overflow (this should never happen unless our code is too inefficient)
+  if ((mpuIntStatus & 0x10) || fifoCount == 1024){
+      // reset so we can continue cleanly
+      mpu.resetFIFO();
+      Serial.println(F("FIFO overflow!"));
+
+  // otherwise, check for DMP data ready interrupt (this should happen frequently)
+  }
+  else if (mpuIntStatus & 0x02){
+      // wait for correct available data length, should be a VERY short wait
+      while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
+      // read a packet from FIFO
+      mpu.getFIFOBytes(fifoBuffer, packetSize);
+      // track FIFO count here in case there is > 1 packet available
+      // (this lets us immediately read more without waiting for an interrupt)
+      fifoCount -= packetSize;
+
+      mpu.dmpGetQuaternion(&q, fifoBuffer);
+      mpu.dmpGetGravity(&gravity, &q);
+      mpu.dmpGetYawPitchRoll(yaw_pitch_roll, &q, &gravity);
+      #if LOG_INPUT
+          Serial.print("yaw_pitch_roll\t");
+          Serial.print(yaw_pitch_roll[0] * 180/M_PI);
+          Serial.print("\t");
+          Serial.print(yaw_pitch_roll[1] * 180/M_PI);
+          Serial.print("\t");
+          Serial.println(yaw_pitch_roll[2] * 180/M_PI);
+      #endif
+      input = yaw_pitch_roll[1] * 180/M_PI + 180;
+  }
+
+  readSerialInput(); // update mega of motor spd from pi
+  updateTime();      // update time to pi
+  updateEncoders();  // update encoders to pi
+  if (motorOverride){
+    updateMotors(motorLspd_RX, motorRspd_RX);
+    delay(990); // delay 990 ms
+    motorOverride = false;
+  }
+  else{
+    //updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
+    //updateMotors(motorLspd, motorRspd);
+  }
 }

@@ -54,6 +54,7 @@ void default_pos(RPM::SerialInterface *serialInterface){
   serialInterface -> setTargetCP(LEFT_KNEE, SRVO_MIN);
   serialInterface -> setTargetCP(RIGHT_KNEE, SRVO_MAX);
   Utils::sleep(1500);
+  exit(1); // NOTE: THIS IS FOR MEGA_IP_TESTING
 }
 
 void servo_test(RPM::SerialInterface *servosInterface, unsigned char channelNumber){
