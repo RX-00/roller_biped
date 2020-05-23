@@ -8,7 +8,8 @@
  * THE EXPECTED SIZE OF ARRAY SHOULD BE 11
  */
 
- // TODO: get IMU working on this and get independent IP balancer up
+// TODO: tune the PID gains
+// NOTE: right should be negative to be the same as left (left goes forward with positive)
 
 #include <string.h>
 #include <stdio.h>
@@ -19,11 +20,11 @@
 #include "PID_v1.h"
 
 // Using a simple PID
-#define LOG_INPUT 0
-#define MANUAL_TUNING 0
+#define LOG_INPUT 1
+#define MANUAL_TUNING 1
 #define LOG_PID_CONSTANTS 0 // MANUAL_TUNING must be 1 for this
 #define MOVE_BACK_AND_FORTH 0
-#define MIN_ABS_SPD 30
+#define MIN_ABS_SPD 25
 
 // Reset Pin, if HIGH then arduino mega  will reset
 #define RESET_PIN 7
@@ -143,8 +144,7 @@ void moveBackForth(){
 void setPIDTuningValues()
 {
   readPIDTuningValues();
-  if (kp != prevKp || ki != prevKi || kd != prevKd)
-    {
+  if (kp != prevKp || ki != prevKi || kd != prevKd){
 #if LOG_PID_CONSTANTS
       Serial.print(kp);Serial.print(", ");Serial.print(ki);Serial.print(", ");Serial.println(kd);
 #endif
@@ -156,9 +156,9 @@ void setPIDTuningValues()
 
 void readPIDTuningValues()
 {
-  int potKp = analogRead(A0);
-  int potKi = analogRead(A1);
-  int potKd = analogRead(A2);
+  int potKp = analogRead(A8);
+  int potKi = analogRead(A9);
+  int potKd = analogRead(A10);
   kp = map(potKp, 0, 1023, 0, 25000) / 100.0; //0 - 250
   ki = map(potKi, 0, 1023, 0, 100000) / 100.0; //0 - 1000
   kd = map(potKd, 0, 1023, 0, 500) / 100.0; //0 - 5
@@ -283,6 +283,8 @@ void setupMotors(){
 // NOTE: move right and left servo functions should be the same code body as the equiv function in
 //       motor_encoders_test
 void moveRMotor(float spd){
+  // NOTE: right should be negative to be the same as left (left goes forward with positive)
+  spd = -1 * spd; 
   if (spd > 0){
     analogWrite(PWM_1, spd);
     digitalWrite(INA_1, HIGH);
@@ -323,6 +325,11 @@ void updateMotors(int mls, int mrs){
   moveLMotor(mrs);
 }
 
+void updateMotorsFwrd(int mls, int mrs){
+  moveRMotor(mls);
+  moveLMotor(mrs);
+}
+
 void moveMotors(int speed, int minAbsSpeed){
   int direction = 1;
   if (speed < 0){
@@ -339,7 +346,7 @@ void moveMotors(int speed, int minAbsSpeed){
 
   int realSpeed = max(MIN_ABS_SPD, abs(speed));
 
-  updateMotors(realSpeed, realSpeed);
+  updateMotorsFwrd(realSpeed, realSpeed);
 
   _currentSpeed = direction * realSpeed;
 }
@@ -435,12 +442,18 @@ void loop(){
   // if programming failed, don't try to do anything
   if (!dmpReady) return;
   // wait for MPU interrupt or extra packet(s) available
+
+  
+  // TODO: mpuInterrupt seems to be a bit broken here, stuck in this loop?
+  
+  
   while (!mpuInterrupt && fifoCount < packetSize){
     // no mpu data - perform PID calculations and output to motors
     pid.Compute();
     // ===========================================================
     // TODO: MOVE MOTORS OUTPUT WITH SLOW SPEED
     // ===========================================================
+    //Serial.print("PID Output u: "); Serial.println(output);
     moveMotors(output, MIN_ABS_SPD);
 
 
@@ -504,7 +517,7 @@ void loop(){
     motorOverride = false;
   }
   else{
-    //updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
-    //updateMotors(motorLspd, motorRspd);
+    updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
+    updateMotors(motorLspd, motorRspd);
   }
 }

@@ -8,6 +8,8 @@
  * THE EXPECTED SIZE OF ARRAY SHOULD BE 11
  */
 
+ // NOTE: right should be negative to be the same as left (left goes forward with positive)
+
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
@@ -229,6 +231,10 @@ void moveLMotor(float spd){
 void updateMotors(){
   moveRMotor(motorRspd);
   moveLMotor(motorLspd);
+  
+  
+  //moveRMotor(-25);
+  //moveLMotor(25);
 
   //Serial.print(motorLspd);
   //Serial.print("   ");
