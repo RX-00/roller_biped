@@ -65,6 +65,10 @@ void SerialInterface::clearErrorMessage()
 	mErrorMessage.clear();
 }
 
+  unsigned short SerialInterface::mMinChannelValue = 4000; // og default val
+  unsigned short SerialInterface::mMaxChannelValue = 8000; // og default val
+
+
 void SerialInterface::setErrorMessage( const std::string& message )
 {
 	mErrorMessage = message;
@@ -81,7 +85,7 @@ bool SerialInterface::setTargetCP( unsigned char channelNumber, unsigned short t
 		return false;
 	return true;
 }
-	
+
 bool SerialInterface::setTargetPP( unsigned char deviceNumber, unsigned char channelNumber, unsigned short target )
 {
 	clearErrorMessage();

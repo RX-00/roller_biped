@@ -1,7 +1,9 @@
+
+
 /*
  * This program is to test the servo physical position limits
  */
-
+/*
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -123,7 +125,7 @@ int main(int argc, char** argv){
   // create the interface for the maestro
   std::cout << "Serial interface init..." << std::endl;
   unsigned char deviceNumber = 12;
-	unsigned char channelNumber = 2;
+	unsigned char channelNumber = 11;
 
 	std::string portName = "/dev/ttyACM1";
 
@@ -142,55 +144,22 @@ int main(int argc, char** argv){
 
   // TODO: FIND OUT THE RANGE OF THE SERVOS IN THIS INTERFACE
   int min = 4000;
-  int max = 8000;
+  int max = 7900;
   int pos;
   // test each servo port at the "same time"
-  printf("\n\nTesting all ports from min to max... \n");
+  printf("\n\nTesting port from min to max... \n");
 
-  for (int i = 0; i < 5; i++){
-    serialInterface -> setTargetCP(2, min);
-    Utils::sleep(2000);
-    serialInterface -> setTargetCP(2, max);
-    Utils::sleep(2000);
+  for (int i = 50; i < 3000; i+=25){
+    std::cout << "pos: " << i << std::endl;
+    serialInterface -> setTargetCP(channelNumber, i);
+    Utils::sleep(250);
   }
 
-  for (int i = 0; i < 2; i++){
-    if (i == 0)
-      pos = min;
-    else
-      pos = max;
-    serialInterface -> setTargetCP(0, pos);
-    serialInterface -> setTargetCP(1, pos);
-    serialInterface -> setTargetCP(2, pos);
-    serialInterface -> setTargetCP(3, pos);
-    serialInterface -> setTargetCP(4, pos);
-    serialInterface -> setTargetCP(5, pos);
-    serialInterface -> setTargetCP(6, pos);
-    serialInterface -> setTargetCP(7, pos);
-    serialInterface -> setTargetCP(8, pos);
-    serialInterface -> setTargetCP(9, pos);
-    serialInterface -> setTargetCP(10, pos);
-    serialInterface -> setTargetCP(11, pos);
-    serialInterface -> setTargetCP(12, pos);
-    serialInterface -> setTargetCP(13, pos);
-    serialInterface -> setTargetCP(14, pos);
-    serialInterface -> setTargetCP(15, pos);
-    serialInterface -> setTargetCP(16, pos);
-    serialInterface -> setTargetCP(17, pos);
-
-    Utils::sleep(1500);
-  }
-
-  Utils::sleep(1500);
-
-  // test each servo port in sequence
-  printf("Testing each servo port in sequence... \n");
-  for (int port_num = 0; port_num < 18; port_num++){
-    for (int i = 4000; i <= 8000; i = i + 100){
-      printf("Testing port %d at pos: %d \n", port_num, i);
-      serialInterface -> setTargetCP(port_num, i);
-      Utils::sleep(300);
-    }
+  for (int i = 0; i < 3; i++){
+    serialInterface -> setTargetCP(channelNumber, min);
+    Utils::sleep(2000);
+    serialInterface -> setTargetCP(channelNumber, max);
+    Utils::sleep(2000);
   }
 
   // delete the interface
@@ -200,3 +169,4 @@ int main(int argc, char** argv){
 
   return 0;
 }
+*/
