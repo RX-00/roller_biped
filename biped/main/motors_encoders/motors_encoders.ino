@@ -18,7 +18,7 @@
 #define RESET_PIN 7
 
 // Right Motor  Pins
-#define INA_1 2
+#define INA_1 3
 #define INB_1 4
 #define PWM_1 5
 
@@ -233,8 +233,8 @@ void updateMotors(){
   moveLMotor(motorLspd);
   
   
-  //moveRMotor(-25);
-  //moveLMotor(25);
+  //moveRMotor(25);
+  //moveLMotor(-25);
 
   //Serial.print(motorLspd);
   //Serial.print("   ");

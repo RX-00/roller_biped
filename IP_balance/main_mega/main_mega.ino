@@ -30,7 +30,7 @@
 #define RESET_PIN 7
 
 // Right Motor  Pins
-#define INA_1 2
+#define INA_1 3
 #define INB_1 4
 #define PWM_1 5
 
@@ -438,6 +438,8 @@ void setup(){
 
 
 //====== MAIN LOOP ======
+// NOTE: cannot call any delay()'s in the main loop due to long delays causing
+//       overflow on the MPU6050's buffer, leading to inability to read from it
 void loop(){
   // if programming failed, don't try to do anything
   if (!dmpReady) return;
@@ -513,7 +515,6 @@ void loop(){
   updateEncoders();  // update encoders to pi
   if (motorOverride){
     updateMotors(motorLspd_RX, motorRspd_RX);
-    delay(990); // delay 990 ms
     motorOverride = false;
   }
   else{

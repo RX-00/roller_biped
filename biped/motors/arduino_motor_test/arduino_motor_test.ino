@@ -3,7 +3,7 @@
 //       using an arduino mega for simplicity (5V logic with 5V logic)
 
 // Right Motor  Pins
-#define INA_1 2
+#define INA_1 3 // used to be 2 until MPU6050 implementation
 #define INB_1 4
 #define PWM_1 5
 
