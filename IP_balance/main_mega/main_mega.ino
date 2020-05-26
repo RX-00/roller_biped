@@ -19,6 +19,27 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "PID_v1.h"
 
+// better MPU6050 implementation
+#define DEBUG
+#ifdef DEBUG
+//#define DPRINT(args...)  Serial.print(args)             //OR use the following syntax:
+#define DPRINTSTIMER(t)    for (static unsigned long SpamTimer; (unsigned long)(millis() - SpamTimer) >= (t); SpamTimer = millis())
+#define  DPRINTSFN(StrSize,Name,...) {char S[StrSize];Serial.print("\t");Serial.print(Name);Serial.print(" "); Serial.print(dtostrf((float)__VA_ARGS__ ,S));}//StringSize,Name,Variable,Spaces,Percision
+#define DPRINTLN(...)      Serial.println(__VA_ARGS__)
+#else
+#define DPRINTSTIMER(t)    if(false)
+#define DPRINTSFN(...)     //blank line
+#define DPRINTLN(...)      //blank line
+#endif
+
+#define LED_PIN 13
+// You may use MPU6050_calibration.ino (https://github.com/Protonerd/DIYino/blob/master/MPU6050_calibration.ino)
+// to find the offest values for your MPU6050. 
+// If you require high precision, you may wish to fine tune it by printing out some parameters.
+//                       XA      YA      ZA      XG      YG      ZG
+int MPUOffsets[6] = {  2885,  3523,    1919,     77,     235,     106};
+
+
 // Using a simple PID
 #define LOG_INPUT 1
 #define MANUAL_TUNING 1
@@ -456,7 +477,7 @@ void loop(){
     // TODO: MOVE MOTORS OUTPUT WITH SLOW SPEED
     // ===========================================================
     //Serial.print("PID Output u: "); Serial.println(output);
-    moveMotors(output, MIN_ABS_SPD);
+    //moveMotors(output, MIN_ABS_SPD);
 
 
     unsigned long currentMillis = millis();
