@@ -204,6 +204,7 @@ void readMPUFIFOBuffer() {
     // discard the rest of the values(packets) inside buffer to prevent overflow. We don't need every single packet MPU6050 gives us.
     mpu.resetFIFO();
 
+
     digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Blink the LED to indicate activity
   }else{
     // This usually never happens.
