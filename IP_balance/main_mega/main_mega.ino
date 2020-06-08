@@ -45,7 +45,7 @@ MPU6050 mpu;
 // Using a simple PID
 #define LOG_INPUT 1
 #define MANUAL_TUNING 1
-#define LOG_PID_CONSTANTS 0 // MANUAL_TUNING must be 1 for this
+#define LOG_PID_CONSTANTS 1 // MANUAL_TUNING must be 1 for this
 #define MOVE_BACK_AND_FORTH 0
 #define MIN_ABS_SPD 25
 
@@ -618,12 +618,21 @@ void setup(){
   i2cSetup();
   Serial.println("MPU6050Connect");
   MPU6050Connect();
-  Serial.println("Setup complete");
   pinMode(LED_PIN, OUTPUT);
 
+  // setup PID
+  Serial.println("Setup PID");
+  pid.SetMode(AUTOMATIC);
+  pid.SetSampleTime(10);
+  pid.SetOutputLimits(-255, 255);
+
+  Serial.println("Setup encoders");
 	setupEncoders();
+  Serial.println("Setup motors");
   setupMotors();
+  Serial.println("Setup reset pin");
   setupResetPin();
+  Serial.println("Setup complete");
 }
 
 
@@ -631,14 +640,27 @@ void setup(){
 // NOTE: cannot call any delay()'s in the main loop due to long delays causing
 //       overflow on the MPU6050's buffer, leading to inability to read from it
 void loop(){
-  // if programming failed, don't try to do anything
-  if (!dmpReady) return;
-  // wait for MPU interrupt or extra packet(s) available
+  // read from the FIFO buffer
+  // NOTE: the interrupt pin could've changed for some time, so set mpuInterrupt to false
+  //       and wait for the next interrupt pin CHANGE signal
+  mpuInterrupt = false;
+  // wait until next interrupt signal -> ensuring buffer is read right after signal change
+  while(!mpuInterrupt){
+    // NOTE: if a command cannot wait, put it here but it's gotta be EXTREMELY FAST
+  }
+  mpuInterrupt = false;
+  readMPUFIFOBuffer();
 
-  
-  // TODO: mpuInterrupt seems to be a bit broken here, stuck in this loop?
-  
-  
+  // Calculate variables of interest using the acquired values from the FIFO buffer
+  getQuaternion();
+  getEuler();
+  getYawPitchRoll();
+  getRealAccel();
+  getWorldAccel();
+
+  printYawPitchRoll();
+
+
   while (!mpuInterrupt && fifoCount < packetSize){
     // no mpu data - perform PID calculations and output to motors
     pid.Compute();
@@ -677,29 +699,28 @@ void loop(){
   // otherwise, check for DMP data ready interrupt (this should happen frequently)
   }
   else if (mpuIntStatus & 0x02){
-      // wait for correct available data length, should be a VERY short wait
-      while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+    // wait for correct available data length, should be a VERY short wait
+    while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
-      // read a packet from FIFO
-      mpu.getFIFOBytes(fifoBuffer, packetSize);
-      // track FIFO count here in case there is > 1 packet available
-      // (this lets us immediately read more without waiting for an interrupt)
-      fifoCount -= packetSize;
+    // read a packet from FIFO
+    mpu.getFIFOBytes(fifoBuffer, packetSize);
+    // track FIFO count here in case there is > 1 packet available
+    // (this lets us immediately read more without waiting for an interrupt)
+    fifoCount -= packetSize;
 
-      mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetGravity(&gravity, &q);
-      mpu.dmpGetYawPitchRoll(yaw_pitch_roll, &q, &gravity);
-      #if LOG_INPUT
-          Serial.print("yaw_pitch_roll\t");
-          Serial.print(yaw_pitch_roll[0] * 180/M_PI);
-          Serial.print("\t");
-          Serial.print(yaw_pitch_roll[1] * 180/M_PI);
-          Serial.print("\t");
-          Serial.println(yaw_pitch_roll[2] * 180/M_PI);
-      #endif
-      input = yaw_pitch_roll[1] * 180/M_PI + 180;
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    #if LOG_INPUT
+      printYawPitchRoll();
+    #endif
+      input = ypr[1] * 180/M_PI + 180;
   }
 
+
+
+  // ====== OLD PC INPUT OPTIONS ======
+  /*
   readSerialInput(); // update mega of motor spd from pi
   updateTime();      // update time to pi
   updateEncoders();  // update encoders to pi
@@ -711,4 +732,5 @@ void loop(){
     updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
     updateMotors(motorLspd, motorRspd);
   }
+  */
 }
