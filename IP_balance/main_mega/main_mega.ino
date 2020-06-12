@@ -374,9 +374,7 @@ void setPIDTuningValues()
 {
   readPIDTuningValues();
   if (kp != prevKp || ki != prevKi || kd != prevKd){
-#if LOG_PID_CONSTANTS
       Serial.print(kp);Serial.print(", ");Serial.print(ki);Serial.print(", ");Serial.println(kd);
-#endif
       pid.SetTunings(kp, ki, kd);
       prevKp = kp; prevKi = ki; prevKd = kd;
     }
@@ -644,9 +642,28 @@ void loop(){
   // NOTE: the interrupt pin could've changed for some time, so set mpuInterrupt to false
   //       and wait for the next interrupt pin CHANGE signal
   mpuInterrupt = false;
+  
   // wait until next interrupt signal -> ensuring buffer is read right after signal change
   while(!mpuInterrupt){
     // NOTE: if a command cannot wait, put it here but it's gotta be EXTREMELY FAST
+    // ===========================================================
+    // NOTE: maybe the motor output should not be in this loop
+    // ===========================================================
+    
+    pid.Compute();
+    Serial.print("PID Output u: "); Serial.println(output);
+    moveMotors(output, MIN_ABS_SPD);
+    
+    unsigned long currentMillis = millis();
+    
+    if (currentMillis - time1Hz >= 1000){
+      loopAt1Hz();
+      time1Hz = currentMillis;
+    }
+    if (currentMillis - time5Hz >= 5000){
+      loopAt5Hz();
+      time5Hz = currentMillis;
+    }
   }
   mpuInterrupt = false;
   readMPUFIFOBuffer();
@@ -658,66 +675,7 @@ void loop(){
   getRealAccel();
   getWorldAccel();
 
-  printYawPitchRoll();
-
-
-  while (!mpuInterrupt && fifoCount < packetSize){
-    // no mpu data - perform PID calculations and output to motors
-    pid.Compute();
-    // ===========================================================
-    // TODO: MOVE MOTORS OUTPUT WITH SLOW SPEED
-    // ===========================================================
-    //Serial.print("PID Output u: "); Serial.println(output);
-    //moveMotors(output, MIN_ABS_SPD);
-
-
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - time1Hz >= 1000){
-      loopAt1Hz();
-      time1Hz = currentMillis;
-    }
-    if (currentMillis - time5Hz >= 5000){
-      loopAt5Hz();
-      time5Hz = currentMillis;
-    }
-  }
-
-  // reset interrupt flag and get INT_STATUS byte
-  mpuInterrupt = false;
-  mpuIntStatus = mpu.getIntStatus();
-
-  // get current FIFO count
-  fifoCount = mpu.getFIFOCount();
-
-  // check for overflow (this should never happen unless our code is too inefficient)
-  if ((mpuIntStatus & 0x10) || fifoCount == 1024){
-      // reset so we can continue cleanly
-      mpu.resetFIFO();
-      Serial.println(F("FIFO overflow!"));
-
-  // otherwise, check for DMP data ready interrupt (this should happen frequently)
-  }
-  else if (mpuIntStatus & 0x02){
-    // wait for correct available data length, should be a VERY short wait
-    while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-    // read a packet from FIFO
-    mpu.getFIFOBytes(fifoBuffer, packetSize);
-    // track FIFO count here in case there is > 1 packet available
-    // (this lets us immediately read more without waiting for an interrupt)
-    fifoCount -= packetSize;
-
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    #if LOG_INPUT
-      printYawPitchRoll();
-    #endif
-      input = ypr[1] * 180/M_PI + 180;
-  }
-
-
+  //printYawPitchRoll();
 
   // ====== OLD PC INPUT OPTIONS ======
   /*
