@@ -374,7 +374,7 @@ void setPIDTuningValues()
 {
   readPIDTuningValues();
   if (kp != prevKp || ki != prevKi || kd != prevKd){
-      Serial.print(kp);Serial.print(", ");Serial.print(ki);Serial.print(", ");Serial.println(kd);
+      Serial.print("kp: "); Serial.print(kp);Serial.print(", ki: ");Serial.print(ki);Serial.print(", kd: ");Serial.println(kd);
       pid.SetTunings(kp, ki, kd);
       prevKp = kp; prevKi = ki; prevKd = kd;
     }
@@ -387,7 +387,7 @@ void readPIDTuningValues()
   int potKi = analogRead(A9);
   int potKd = analogRead(A10);
   kp = map(potKp, 0, 1023, 0, 25000) / 100.0; //0 - 250
-  ki = map(potKi, 0, 1023, 0, 100000) / 100.0; //0 - 1000
+  ki = map(potKi, 0, 1023, 0, 50000) / 100.0; //0 - 500
   kd = map(potKd, 0, 1023, 0, 500) / 100.0; //0 - 5
 }
 #endif
@@ -651,7 +651,7 @@ void loop(){
     // ===========================================================
     
     pid.Compute();
-    Serial.print("PID Output u: "); Serial.println(output);
+    //Serial.print("PID Output u: "); Serial.println(output);
     moveMotors(output, MIN_ABS_SPD);
     
     unsigned long currentMillis = millis();
