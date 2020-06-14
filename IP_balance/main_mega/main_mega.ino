@@ -651,8 +651,9 @@ void loop(){
     // ===========================================================
     
     pid.Compute();
-    //Serial.print("PID Output u: "); Serial.println(output);
+    Serial.print("PID Output u: "); Serial.println(output);
     moveMotors(output, MIN_ABS_SPD);
+    delay(100); // NOTE: might need to make this shorter but it also needs to be substantial enough for the torque
     
     unsigned long currentMillis = millis();
     
@@ -665,6 +666,7 @@ void loop(){
       time5Hz = currentMillis;
     }
   }
+    
   mpuInterrupt = false;
   readMPUFIFOBuffer();
 
