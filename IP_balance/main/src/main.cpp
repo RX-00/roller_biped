@@ -117,7 +117,7 @@ int main(int argc, char** argv){
   // Serial servo interface
   unsigned char deviceNumber = 12;
 	unsigned char channelNumber = 11;
-  std::string portName = "/dev/ttyACM1";
+  std::string portName = "/dev/ttyACM0";
   RPM::SerialInterface *servosInterface = serialInterfaceInit(deviceNumber, channelNumber, portName);
   servosInterface -> SerialInterface::mMinChannelValue = SRVO_MIN;
   servosInterface -> SerialInterface::mMaxChannelValue = SRVO_MAX;
