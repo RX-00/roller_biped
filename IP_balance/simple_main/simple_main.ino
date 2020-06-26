@@ -1,3 +1,5 @@
+// Simple PID loop for balancing IP with just IMU data
+
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "PID_v1.h"
@@ -69,6 +71,7 @@ bool motorOverride = false;
 
 
 //PID
+
 double originalSetpoint = 174; // 175 was too forward, 173 was too back, let's try 174 (TO BE TESTED)
 double setpoint = originalSetpoint;
 double movingAngleOffset = 0.1;

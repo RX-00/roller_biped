@@ -4,22 +4,25 @@
  * - The IMU and servo control will be left up for the computer itself for now
  *   as of April 17, 2020
  * =======
- * 
- * THE EXPECTED SIZE OF ARRAY SHOULD BE 11
+ *
  */
 
-// TODO: tune the PID gains
-// NOTE: right should be negative to be the same as left (left goes forward with positive)
+// TODO: Set standard for left and right motors and legs
+// TODO: Implement second PID loop for encoders velocity
 
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
+
 #include "I2Cdev.h"
-#include "Wire.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "PID_v1.h"
 
-// better MPU6050 implementation
+#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+#include "Wire.h"
+#endif
+
+#define MIN_ABS_SPEED 20
+
+MPU6050 mpu;
+
 #define DEBUG
 #ifdef DEBUG
 //#define DPRINT(args...)  Serial.print(args)             //OR use the following syntax:
@@ -33,24 +36,6 @@
 #endif
 
 #define LED_PIN 13
-// You may use MPU6050_calibration.ino (https://github.com/Protonerd/DIYino/blob/master/MPU6050_calibration.ino)
-// to find the offest values for your MPU6050. 
-// If you require high precision, you may wish to fine tune it by printing out some parameters.
-//                       XA      YA      ZA      XG      YG      ZG
-int MPUOffsets[6] = {  2885,  3523,    1919,     77,     235,     106};
-
-MPU6050 mpu;
-
-
-// Using a simple PID
-#define LOG_INPUT 0
-#define MANUAL_TUNING 0
-#define LOG_PID_CONSTANTS 0 // MANUAL_TUNING must be 1 for this
-#define MOVE_BACK_AND_FORTH 0
-#define MIN_ABS_SPD 25
-
-// Reset Pin, if HIGH then arduino mega  will reset
-#define RESET_PIN 7
 
 // Right Motor  Pins
 #define INA_1 3
@@ -95,29 +80,38 @@ int motorLspd_RX = 0;
 int motorRspd_RX = 0;
 bool motorOverride = false;
 
-// PID
-#if MANUAL_TUNING
-double kp , ki, kd;
-double prevKp, prevKi, prevKd;
-#endif
-double originalSetpoint = -6.0; // TODO: (pitch?) TEST AND FIND OUT DEFAULT POS SETPOINT STATICALLY
+
+//PID
+// PID for IMU MPU6050
+double originalSetpoint = 174; // 175 was too forward, 173 was too back, let's try 174 (TO BE TESTED)
 double setpoint = originalSetpoint;
-double movingAngleOffset = 0.3; // TODO: change for moving back & forth
+double movingAngleOffset = 0.1;
 double input, output;
-int moveState = 0; //0 = balance; 1 = back; 2 = forth
+int moveState=0; //0 = balance; 1 = back; 2 = forth
+double Kp = 110; //110
+double Kd = 5.5; //5.5
+double Ki = 600; //600
+PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
-#if MANUAL_TUNING
-  PID pid(&input, &output, &setpoint, 0, 0, 0, DIRECT);
-#else
-  PID pid(&input, &output, &setpoint, 0.01, 0, 0, DIRECT);
-#endif
+double motorSpeedFactorLeft = 0.9;
+double motorSpeedFactorRight = 0.5;
 
-// timers
+//timers
 long time1Hz = 0;
 long time5Hz = 0;
 
 
-// ===== i2c SETUP Items =====
+
+// You may use MPU6050_calibration.ino (https://github.com/Protonerd/DIYino/blob/master/MPU6050_calibration.ino)
+// to find the offest values for your MPU6050. 
+// If you require high precision, you may wish to fine tune it by printing out some parameters.
+//                       XA      YA      ZA      XG      YG      ZG
+int MPUOffsets[6] = {  2885,  3523,    1919,     77,     235,     106};
+
+
+// ================================================================
+// ===                      i2c SETUP Items                     ===
+// ================================================================
 void i2cSetup() {
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -128,15 +122,17 @@ void i2cSetup() {
 #endif
 }
 
-
-// ===== INTERRUPT DETECTION ROUTINE =====
+// ================================================================
+// ===               INTERRUPT DETECTION ROUTINE                ===
+// ================================================================
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has changed
 void dmpDataReady() {
   mpuInterrupt = true;
 }
 
-
-// ===== MPU DMP SETUP =====
+// ================================================================
+// ===                      MPU DMP SETUP                       ===
+// ================================================================
 // MPU control/status vars
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
@@ -199,8 +195,9 @@ void MPU6050Connect() {
   mpuInterrupt = false; // wait for next interrupt
 }
 
-
-// ===== MPU DMP Get Data Function =====
+// ================================================================
+// ===                    MPU DMP Get Data                      ===
+// ================================================================
 void readMPUFIFOBuffer() {
   mpuIntStatus = mpu.getIntStatus();
   fifoCount = mpu.getFIFOCount();
@@ -227,6 +224,7 @@ void readMPUFIFOBuffer() {
     // discard the rest of the values(packets) inside buffer to prevent overflow. We don't need every single packet MPU6050 gives us.
     mpu.resetFIFO();
 
+
     digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Blink the LED to indicate activity
   }else{
     // This usually never happens.
@@ -237,7 +235,7 @@ void readMPUFIFOBuffer() {
 // ================================================================
 // ===                    Output Functions                      ===
 // ================================================================
-// add these functions to your code as needed (thank you KCH)
+// add these functions to your code as needed
 
 // get quaternion components in a [w, x, y, z] format
 // very useful when Euler and YPR angles cannot satisfy your application
@@ -343,54 +341,6 @@ void printWorldAccel()
 }
 
 
-// ===== CONTROL FUNCTIONS =====
-void loopAt1Hz(){
-  #if MANUAL_TUNING
-  setPIDTuningValues();
-  #endif
-}
-
-void loopAt5Hz(){
-  #if MOVE_BACK_AND_FORTH
-  moveBackForth();
-  #endif
-}
-
-void moveBackForth(){
-  moveState++;
-  if (moveState > 2) moveState = 0;
-  if (moveState == 0)
-    setpoint = originalSetpoint;
-    
-  else if (moveState == 1)
-    setpoint = originalSetpoint - movingAngleOffset;
-  else
-    setpoint = originalSetpoint + movingAngleOffset;
-}
-
-// PID tuning (use 3 potentiometers)
-#if MANUAL_TUNING
-void setPIDTuningValues()
-{
-  readPIDTuningValues();
-  if (kp != prevKp || ki != prevKi || kd != prevKd){
-      Serial.print("kp: "); Serial.print(kp);Serial.print(", ki: ");Serial.print(ki);Serial.print(", kd: ");Serial.println(kd);
-      pid.SetTunings(kp, ki, kd);
-      prevKp = kp; prevKi = ki; prevKd = kd;
-    }
-}
-
-
-void readPIDTuningValues()
-{
-  int potKp = analogRead(A8);
-  int potKi = analogRead(A9);
-  int potKd = analogRead(A10);
-  kp = map(potKp, 0, 1023, 0, 10000) / 100.0; //0 - 100
-  ki = map(potKi, 0, 1023, 0, 50000) / 100.0; //0 - 500
-  kd = map(potKd, 0, 1023, 0, 500) / 100.0; //0 - 5
-}
-#endif
 
 //====== SERIAL FUNCTIONS ======
 // Read in input from pi
@@ -440,7 +390,7 @@ int charArrayToInt(char *input_token){
 
 //====== TIME FUNCTIONS ======
 void updateTime(){
-  currentMicrosecs = micros();
+/*  currentMicrosecs = micros();
   lastUpdateMillisecs = millis();
   microsecsSinceLastUpdate = currentMicrosecs - lastUpdateMillisecs;
 
@@ -456,7 +406,7 @@ void updateTime(){
   Serial.print(lastUpdateMicrosecs);
   Serial.print(";");
   Serial.print(secsSinceLastUpdate);
-  Serial.print("\n");
+  Serial.print("\n");*/
 }
 
 
@@ -549,32 +499,36 @@ void moveLMotor(float spd){
 }
 
 void updateMotors(int mls, int mrs){
-  moveRMotor(mls);
-  moveLMotor(mrs);
+  moveRMotor(mrs * motorSpeedFactorRight);
+  moveLMotor(mls * motorSpeedFactorLeft);
+  updateMotorsPi(mrs * motorSpeedFactorRight, mls * motorSpeedFactorLeft);
 }
 
+
 void updateMotorsFwrd(int mls, int mrs){
-  moveRMotor(mls);
-  moveLMotor(mrs);
+  moveRMotor(mrs * motorSpeedFactorRight);
+  moveLMotor(mls * motorSpeedFactorLeft);
+  updateMotorsPi(mrs * motorSpeedFactorRight, mls * motorSpeedFactorLeft);
 }
 
 void moveMotors(int speed, int minAbsSpeed){
   int direction = 1;
   if (speed < 0){
     direction = -1;
-    speed = min(speed, direction * MIN_ABS_SPD);
+    speed = min(speed, direction * MIN_ABS_SPEED);
     speed = max(speed, -255);
   }
   else{
-    speed = max(speed, MIN_ABS_SPD);
+    speed = max(speed, MIN_ABS_SPEED);
     speed = min(speed, 255);
   }
 
   if (speed == _currentSpeed) return;
 
-  int realSpeed = max(MIN_ABS_SPD, abs(speed));
+  int realSpeed = max(MIN_ABS_SPEED, abs(speed));
 
-  updateMotorsFwrd(realSpeed, realSpeed);
+  if (speed > 0) updateMotorsFwrd(-realSpeed, -realSpeed);
+  if (speed < 0) updateMotorsFwrd(realSpeed, realSpeed);
 
   _currentSpeed = direction * realSpeed;
 }
@@ -589,98 +543,83 @@ void updateMotorsPi(int mls, int mrs){
 }
 
 
-//======= RESET PIN FUNCTIONS =======
-void setupResetPin(){
-  digitalWrite(RESET_PIN, HIGH);
-  delay(200);
-  pinMode(RESET_PIN, OUTPUT);
-  digitalWrite(RESET_PIN, HIGH);
-}
-
-void resetBoard(){
-  Serial.println();
-  delay(1000);
-  digitalWrite(RESET_PIN, LOW);
-}
 
 
 
 
+// ================================================================
+// ===                         Setup                            ===
+// ================================================================
+void setup() {
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+  Wire.begin();
+  TWBR = 24; // 400kHz I2C clock (200kHz if CPU is 8MHz)
+#elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+  Fastwire::setup(400, true);
+#endif
 
-
-//====== SETUP FUNCTION ======
-void setup(){
-	// Init Serial port with 115200 buad rate
-  Serial.begin(115200);
+  // setup IMU MPU6050
+  Serial.begin(115200); //115200
   while (!Serial);
   Serial.println("i2cSetup");
   i2cSetup();
   Serial.println("MPU6050Connect");
   MPU6050Connect();
-  pinMode(LED_PIN, OUTPUT);
 
   // setup PID
-  Serial.println("Setup PID");
   pid.SetMode(AUTOMATIC);
   pid.SetSampleTime(10);
   pid.SetOutputLimits(-255, 255);
 
+  // setup encoders, motors, etc.
   Serial.println("Setup encoders");
 	setupEncoders();
   Serial.println("Setup motors");
   setupMotors();
   Serial.println("Setup reset pin");
-  setupResetPin();
+  //setupResetPin();
+
   Serial.println("Setup complete");
+  pinMode(LED_PIN, OUTPUT);
 }
 
 
-//====== MAIN LOOP ======
-// NOTE: cannot call any delay()'s in the main loop due to long delays causing
-//       overflow on the MPU6050's buffer, leading to inability to read from it
-void loop(){
-  // read from the FIFO buffer
-  // NOTE: the interrupt pin could've changed for some time, so set mpuInterrupt to false
-  //       and wait for the next interrupt pin CHANGE signal
-  mpuInterrupt = false;
-
-  // wait until next interrupt signal -> ensuring buffer is read right after signal change
+// ================================================================
+// ===                          Loop                            ===
+// ================================================================
+void loop() {
+  // ---- read from the FIFO buffer ---- //
+  // The interrupt pin could have changed for some time already. 
+  // So set mpuInterrupt to false and wait for the next interrupt pin CHANGE signal.
+  mpuInterrupt = false; 
+  //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
-    // NOTE: if a command cannot wait, put it here but it's gotta be EXTREMELY FAST
     pid.Compute();
-    //Serial.print("PID Output u: "); Serial.println(output);
-    unsigned long currentMillis = millis();
-    if (currentMillis - time1Hz >= 1000){
-      loopAt1Hz();
-      time1Hz = currentMillis;
-    }
-    if (currentMillis - time5Hz >= 5000){
-      loopAt5Hz();
-      time5Hz = currentMillis;
-    }
+    //Serial.println(output);
+    //motorController.move(output, MIN_ABS_SPEED);
+    moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
   }
-
-  moveMotors(output, MIN_ABS_SPD);
-  delay(5); // NOTE: might need to make this shorter but it also needs to be substantial enough for the torque
-
   mpuInterrupt = false;
   readMPUFIFOBuffer();
 
-  
-
-  // Calculate variables of interest using the acquired values from the FIFO buffer
-  getQuaternion();
-  getEuler();
   getYawPitchRoll();
-  getRealAccel();
-  getWorldAccel();
 
-  printYawPitchRoll();
-  getYawPitchRoll();
-  input = ypr[1] * 180/M_PI + 180; // radians to degrees
+  /*
+  Serial.print("ypr (degrees)\t");
+  Serial.print(ypr[0] * 180/M_PI);
+  Serial.print("\t");
+  Serial.print(ypr[1] * 180/M_PI);
+  Serial.print("\t");
+  Serial.println(ypr[2] * 180/M_PI);
+  */
+
+  input = ypr[1] * 180/M_PI + 180;
+
+
+
 
   // ====== OLD PC INPUT OPTIONS ======
-  /*
   readSerialInput(); // update mega of motor spd from pi
   updateTime();      // update time to pi
   updateEncoders();  // update encoders to pi
@@ -692,5 +631,4 @@ void loop(){
     updateMotorsPi(motorLspd, motorRspd); // update motor spd to pi
     updateMotors(motorLspd, motorRspd);
   }
-  */
 }
