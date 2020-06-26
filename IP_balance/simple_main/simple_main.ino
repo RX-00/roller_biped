@@ -69,14 +69,14 @@ bool motorOverride = false;
 
 
 //PID
-double originalSetpoint = 175;
+double originalSetpoint = 174; // 175 was too forward, 173 was too back, let's try 174 (TO BE TESTED)
 double setpoint = originalSetpoint;
 double movingAngleOffset = 0.1;
 double input, output;
 int moveState=0; //0 = balance; 1 = back; 2 = forth
-double Kp = 110;
-double Kd = 1.2;
-double Ki = 150;
+double Kp = 110; //110
+double Kd = 5.5; //5.5
+double Ki = 600; //600
 PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
 double motorSpeedFactorLeft = 0.9;
@@ -581,7 +581,6 @@ void loop() {
     //motorController.move(output, MIN_ABS_SPEED);
     moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
   }
-  delay(5);
   mpuInterrupt = false;
   readMPUFIFOBuffer();
 
