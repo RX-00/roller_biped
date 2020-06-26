@@ -79,8 +79,8 @@ double Kd = 0;
 double Ki = 0;
 PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
-double motorSpeedFactorLeft = 0.8;
-double motorSpeedFactorRight = 0.5;
+double motorSpeedFactorLeft = 0.99;
+double motorSpeedFactorRight = 0.25;
 
 //timers
 long time1Hz = 0;
