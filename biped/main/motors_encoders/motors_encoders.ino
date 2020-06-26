@@ -233,8 +233,8 @@ void updateMotors(){
   moveLMotor(motorLspd);
   
   
-  //moveRMotor(25);
-  //moveLMotor(-25);
+  //moveRMotor(150);
+  moveLMotor(-150);
 
   //Serial.print(motorLspd);
   //Serial.print("   ");

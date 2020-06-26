@@ -1,6 +1,6 @@
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
-#include <PID_v1.h>
+#include "PID_v1.h"
 
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
 #include "Wire.h"
@@ -69,17 +69,17 @@ bool motorOverride = false;
 
 
 //PID
-double originalSetpoint = 175.8;
+double originalSetpoint = 170;
 double setpoint = originalSetpoint;
 double movingAngleOffset = 0.1;
 double input, output;
 int moveState=0; //0 = balance; 1 = back; 2 = forth
-double Kp = 50;
-double Kd = 1.4;
-double Ki = 60;
+double Kp = 15;
+double Kd = 0;
+double Ki = 0;
 PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
-double motorSpeedFactorLeft = 0.6;
+double motorSpeedFactorLeft = 0.8;
 double motorSpeedFactorRight = 0.5;
 
 //timers
@@ -376,7 +376,7 @@ int charArrayToInt(char *input_token){
 
 //====== TIME FUNCTIONS ======
 void updateTime(){
-  currentMicrosecs = micros();
+/*  currentMicrosecs = micros();
   lastUpdateMillisecs = millis();
   microsecsSinceLastUpdate = currentMicrosecs - lastUpdateMillisecs;
 
@@ -392,7 +392,7 @@ void updateTime(){
   Serial.print(lastUpdateMicrosecs);
   Serial.print(";");
   Serial.print(secsSinceLastUpdate);
-  Serial.print("\n");
+  Serial.print("\n");*/
 }
 
 
@@ -490,27 +490,28 @@ void updateMotors(int mls, int mrs){
 }
 
 void updateMotorsFwrd(int mls, int mrs){
-  moveRMotor(mls);
-  moveLMotor(mrs);
+  moveRMotor(mls * motorSpeedFactorRight);
+  moveLMotor(mrs * motorSpeedFactorLeft);
 }
 
 void moveMotors(int speed, int minAbsSpeed){
   int direction = 1;
   if (speed < 0){
     direction = -1;
-    speed = min(speed, direction * MIN_ABS_SPD);
+    speed = min(speed, direction * MIN_ABS_SPEED);
     speed = max(speed, -255);
   }
   else{
-    speed = max(speed, MIN_ABS_SPD);
+    speed = max(speed, MIN_ABS_SPEED);
     speed = min(speed, 255);
   }
 
   if (speed == _currentSpeed) return;
 
-  int realSpeed = max(MIN_ABS_SPD, abs(speed));
+  int realSpeed = max(MIN_ABS_SPEED, abs(speed));
 
-  updateMotorsFwrd(realSpeed, realSpeed);
+  if (speed > 0) updateMotorsFwrd(-realSpeed, -realSpeed);
+  if (speed < 0) updateMotorsFwrd(realSpeed, realSpeed);
 
   _currentSpeed = direction * realSpeed;
 }
@@ -560,7 +561,7 @@ void setup() {
   Serial.println("Setup motors");
   setupMotors();
   Serial.println("Setup reset pin");
-  setupResetPin();
+  //setupResetPin();
 
   Serial.println("Setup complete");
   pinMode(LED_PIN, OUTPUT);
@@ -576,20 +577,24 @@ void loop() {
   //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
     pid.Compute();
+    Serial.println(output);
     //motorController.move(output, MIN_ABS_SPEED);
     moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
   }
+  delay(5);
   mpuInterrupt = false;
   readMPUFIFOBuffer();
 
   getYawPitchRoll();
 
+  /*
   Serial.print("ypr (degrees)\t");
   Serial.print(ypr[0] * 180/M_PI);
   Serial.print("\t");
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
+  */
 
   input = ypr[1] * 180/M_PI + 180;
 
