@@ -69,18 +69,18 @@ bool motorOverride = false;
 
 
 //PID
-double originalSetpoint = 170;
+double originalSetpoint = 175;
 double setpoint = originalSetpoint;
 double movingAngleOffset = 0.1;
 double input, output;
 int moveState=0; //0 = balance; 1 = back; 2 = forth
-double Kp = 15;
-double Kd = 0;
-double Ki = 0;
+double Kp = 110;
+double Kd = 1.2;
+double Ki = 150;
 PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
-double motorSpeedFactorLeft = 0.99;
-double motorSpeedFactorRight = 0.25;
+double motorSpeedFactorLeft = 0.9;
+double motorSpeedFactorRight = 0.5;
 
 //timers
 long time1Hz = 0;
