@@ -3,3 +3,6 @@ In this mode the robot will have its legs locked out to a singularity so it esse
 performs as if it was a typical two wheeled balancing inverted pendulum robot.
 
 NOTE: do not forget to set the Maestro's serial mode to be "USB Dual Port"
+
+NOTE: run reg. main for servo leg init def IP state and then run main_mega for whatever
+      controller you want to use
