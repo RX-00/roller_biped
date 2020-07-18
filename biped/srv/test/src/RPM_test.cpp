@@ -107,7 +107,7 @@ int main(int argc, char** argv){
   // create the interface for the maestro
   cout << "Serial interface init..." << endl;
   unsigned char deviceNumber = 12;
-	unsigned char channelNumber = 2;
+	unsigned char channelNumber = 1;
 
 	std::string portName = "/dev/ttyACM0";
 
