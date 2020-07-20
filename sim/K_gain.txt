@@ -1,10 +1,8 @@
-%% MATLAB script for simulation of the IP with experimentation of variable leg length
-%  The mathematical model of the IP system that I am using was derived by
-%  Alexander Semion. The rest of this simulation was written by me during a
-%  fever dream haha.
+K =
 
-%% TODO: might need to tune Q more for wheel ending position and time it takes to reach steady state
+   -0.2160   -0.1269   -8.5630   -1.6085
 
+with these conditions:
 %% system params
 mp = 0.793;       % mass of the pendulum (point mass in this model)
 mw_l = 0.243;     % mass of left wheel + motor
@@ -74,43 +72,3 @@ R = 1500;
 % S = solution to Riccati equation
 % e = eigenvalues of the closed loop system
 [K,S,e] = lqr(A,B,Q,R);
-
-%% Model Simulation
-% create our state-space model
-sys_ss = ss(A,B,C,D,'statename',states,'inputname',inputs,'outputname',outputs);
-
-% check if our system is controllable
-% if the rank of the controllability matrix ctrb(A,B) = n (the num of cols of the state vector (linearly independent))
-controlalability = rank(ctrb(A,B));
-if controlalability == n
-    disp("Your system is controllable!");
-end
-
-% Now let's recreate our state-space model with new pole placements from
-% the K gain from the lqr controller
-% new dynamical matrix (new A matrix w/ feedback)
-Ac = [(A-B*K)];
-Bc = [B];
-Cc = [C];
-Dc = [D];
-
-sys_ctrl_lqr = ss(Ac,Bc,Cc,Dc,'statename',states,'inputname',inputs,'outputname',outputs);
-
-% time frame
-t = 0:0.01:2.5; % to 5 seconds
-% input size
-u = 0.2 * ones(size(t));
-
-% simulate the state-space system
-% y = system response sampled at same times as the input (t)
-% t = time vector used for simulation
-% x = state trajectories (for state-space models)
-[y,t,x] = lsim(sys_ctrl_lqr,u,t,x0);
-
-% plot the system results
-[AX,H1,H2] = plotyy(t,y(:,1),t,y(:,2),'plot');
-set(get(AX(1),'Ylabel'),'String','wheel position (m)')
-set(get(AX(2),'Ylabel'),'String','pendulum angle (radians)')
-set(get(AX(1),'Xlabel'),'String','time (s)')
-title('Step Response with LQR Control for IP')
-

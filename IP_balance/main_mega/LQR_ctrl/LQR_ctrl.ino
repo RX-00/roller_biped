@@ -71,6 +71,22 @@ int motorRspd_RX = 0;
 bool motorOverride = false;
 
 
+// System tuning info (left over from prev. PID controller)
+double originalSetpoint = 174; // 175 was too forward, 173 was too back, let's try 174 (TO BE TESTED)
+double setpoint = originalSetpoint;
+double movingAngleOffset = 0.1;
+double input, output;
+int moveState=0; //0 = balance; 1 = back; 2 = forth
+double Kp = 110; //110
+double Kd = 5.5; //5.5
+double Ki = 600; //600
+PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
+
+double motorSpeedFactorLeft = 0.9;
+double motorSpeedFactorRight = 0.5;
+
+
+
 
 // You may use MPU6050_calibration.ino (https://github.com/Protonerd/DIYino/blob/master/MPU6050_calibration.ino)
 // to find the offest values for your MPU6050. 
@@ -551,9 +567,9 @@ void setup() {
 // ================================================================
 void loop() {
   // ---- read from the FIFO buffer ---- //
-  // The interrupt pin could have changed for some time already. 
+  // The interrupt pin could have changed for some time already.
   // So set mpuInterrupt to false and wait for the next interrupt pin CHANGE signal.
-  mpuInterrupt = false; 
+  mpuInterrupt = false;
   //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
     moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
