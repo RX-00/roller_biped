@@ -1,4 +1,4 @@
-// LQR loop for balancing IP with IMU & Encoder data
+// Test program for reading encoder ticks as radians
 
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
@@ -6,10 +6,6 @@
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
 #include "Wire.h"
 #endif
-
-// NOTE: TODO: see if I need to utilize one of the filters from the MPU6050 or implement a Kalman filter
-
-#define MIN_ABS_SPEED 20
 
 MPU6050 mpu;
 
@@ -574,24 +570,23 @@ void loop(){
   mpuInterrupt = false;
   //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
-    moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
+    moveMotors(output, 20);
+    updateEncoders();
+    updateMotors();
   }
   mpuInterrupt = false;
   readMPUFIFOBuffer();
 
   getYawPitchRoll();
 
-  /*
-  Serial.print("ypr (degrees)\t");
+  /*Serial.print("ypr (degrees)\t");
   Serial.print(ypr[0] * 180/M_PI);
   Serial.print("\t");
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
-  Serial.println(ypr[2] * 180/M_PI);
-  */
-
+  Serial.println(ypr[2] * 180/M_PI);*/
   input = ypr[1] * 180/M_PI + 180;
 
-
-  //printYawPitchRoll();
+  readSerialInput();
+  printYawPitchRoll();
 }
