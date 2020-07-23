@@ -37,6 +37,7 @@ MPU6050 mpu;
 #define Left_Encoder_PinA 18
 #define Left_Encoder_PinB 19
 
+volatile int left_encoder_angle = 0;
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
@@ -45,6 +46,7 @@ volatile bool LeftEncoderBSet;
 #define Right_Encoder_PinA 16
 #define Right_Encoder_PinB 17
 
+volatile int right_encoder_angle = 0;
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
 volatile bool RightEncoderBSet;
@@ -403,27 +405,39 @@ void setupEncoders(){
   // Right encoder
   pinMode(Right_Encoder_PinA, INPUT);      // sets pin A pullup
   pinMode(Right_Encoder_PinB, INPUT);      // sets pin B pullup
-
   attachInterrupt(digitalPinToInterrupt(Right_Encoder_PinA), do_Right_Encoder, RISING);
 }
 
 void updateEncoders(){
   Serial.print("e");
   Serial.print(";");
-  Serial.print(Left_Encoder_Ticks);
+  //Serial.print(Left_Encoder_Ticks);
+  Serial.print(left_encoder_angle);
   Serial.print(";");
-  Serial.print(Right_Encoder_Ticks);
+  //Serial.print(Right_Encoder_Ticks);
+  Serial.print(right_encoder_angle);
   Serial.print("\n");
 }
 
+// NOTE: these encoder's CPR = 64
+// TODO: TEST THAT THE ENCODER IS INDEED 22.5 DEGREES PER PULSE AND THEN IF TRUE CHANGE IT ALL TO RADIANS
 void do_Left_Encoder(){
   LeftEncoderBSet = digitalRead(Left_Encoder_PinB);   // read the input pin
   Left_Encoder_Ticks += LeftEncoderBSet ? -1 : +1;
+  if (left_encoder_angle == 360)
+    left_encoder_angle = 0;
+  else if(left_encoder_angle == 0)
+    left_encoder_angle = 360;
+  else
+    left_encoder_angle += LeftEncoderBSet ? -22.5 : +22.5;
+  if (left_encoder_angle < 0 || left_encoder_angle > 360)
+    Serial.println("ERROR IMPOSSIBLE ANGLE IN DEGREES FROM LEFT ENCODER");
 }
 
 void do_Right_Encoder(){
   RightEncoderBSet = digitalRead(Right_Encoder_PinB);   // read the input pin
   Right_Encoder_Ticks += RightEncoderBSet ? -1 : +1;
+  right_encoder_angle = 0;
 }
 
 

@@ -1,4 +1,10 @@
 // LQR loop for balancing IP with IMU & Encoder data
+//========================================================
+// NOTE: - untested LQR on real sys, only done in sim rn
+// TODO: - implement encoder tests
+//       - remeasure l default leg length
+//       - test out K gain matrix with l
+//========================================================
 
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
@@ -6,8 +12,6 @@
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
 #include "Wire.h"
 #endif
-
-// NOTE: TODO: see if I need to utilize one of the filters from the MPU6050 or implement a Kalman filter
 
 #define MIN_ABS_SPEED 20
 
