@@ -27,9 +27,9 @@ MPU6050 mpu;
 #define LED_PIN 13
 
 // Right Motor  Pins
-#define INA_1 3
-#define INB_1 4
-#define PWM_1 5
+#define INA_1 4
+#define INB_1 5
+#define PWM_1 6
 
 // Left Motor Pins
 #define INA_2 12
@@ -37,17 +37,19 @@ MPU6050 mpu;
 #define PWM_2 11
 
 // Left Encoder
-#define Left_Encoder_PinA 18
-#define Left_Encoder_PinB 19
+#define Left_Encoder_PinA 19 // interrupt
+#define Left_Encoder_PinB 15
 
+volatile float left_encoder_angle = 0;
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
 
 // Right Encoder
-#define Right_Encoder_PinA 16
-#define Right_Encoder_PinB 17
+#define Right_Encoder_PinA 18 // interrupt
+#define Right_Encoder_PinB 14
 
+volatile float right_encoder_angle = 0;
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
 volatile bool RightEncoderBSet;
@@ -177,7 +179,7 @@ void MPU6050Connect() {
   // enable Arduino interrupt detection
   Serial.println(F("Enabling interrupt detection (Arduino external interrupt pin 2 on the Uno)..."));
   Serial.print("mpu.getInterruptDrive=  "); Serial.println(mpu.getInterruptDrive());
-  attachInterrupt(0, dmpDataReady, CHANGE); // pin 2 on the Uno. Please check the online Arduino reference for more options for connecting this interrupt pin
+  attachInterrupt(1, dmpDataReady, CHANGE); // pin 2 on the Uno. Please check the online Arduino reference for more options for connecting this interrupt pin
   // get expected DMP packet size for later comparison
   packetSize = mpu.dmpGetFIFOPacketSize();
   mpu.resetFIFO(); // Clear fifo buffer
@@ -423,14 +425,35 @@ void updateEncoders(){
   Serial.print("\n");
 }
 
+// NOTE: these encoder's CPR = 64, interrupt fxns cannot have any output or Serial.print() due to EnableInterrupt library
 void do_Left_Encoder(){
   LeftEncoderBSet = digitalRead(Left_Encoder_PinB);   // read the input pin
   Left_Encoder_Ticks += LeftEncoderBSet ? -1 : +1;
+
+  if (LeftEncoderBSet == 0)
+    left_encoder_angle += 0.18;
+  if (LeftEncoderBSet == 1)
+    left_encoder_angle -= 0.18;
+
+  if (left_encoder_angle >= 360)
+    left_encoder_angle = 0;
+  else if (left_encoder_angle <= 0)
+    left_encoder_angle = 360;
 }
 
 void do_Right_Encoder(){
   RightEncoderBSet = digitalRead(Right_Encoder_PinB);   // read the input pin
   Right_Encoder_Ticks += RightEncoderBSet ? -1 : +1;
+
+  if (RightEncoderBSet == 0)
+    right_encoder_angle += 0.18;
+  if (RightEncoderBSet == 1)
+    right_encoder_angle -= 0.18;
+
+  if (right_encoder_angle >= 360)
+    right_encoder_angle = 0;
+  else if (right_encoder_angle <= 0)
+    right_encoder_angle = 360;
 }
 
 

@@ -1,8 +1,10 @@
 // LQR loop for balancing IP with IMU & Encoder data
 //========================================================
 // NOTE: - untested LQR on real sys, only done in sim rn
-// TODO: - implement encoder tests
+// 
+// TODO: - change encoder functions to radian
 //       - remeasure l default leg length
+//       - implement encoder angle (radians) into LQR 
 //       - test out K gain matrix with l
 //========================================================
 
@@ -32,9 +34,9 @@ MPU6050 mpu;
 #define LED_PIN 13
 
 // Right Motor  Pins
-#define INA_1 3
-#define INB_1 4
-#define PWM_1 5
+#define INA_1 4
+#define INB_1 5
+#define PWM_1 6
 
 // Left Motor Pins
 #define INA_2 12
@@ -42,17 +44,19 @@ MPU6050 mpu;
 #define PWM_2 11
 
 // Left Encoder
-#define Left_Encoder_PinA 18
-#define Left_Encoder_PinB 19
+#define Left_Encoder_PinA 19 // interrupt pin
+#define Left_Encoder_PinB 15
 
+volatile float left_encoder_angle = 0;
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
 
 // Right Encoder
-#define Right_Encoder_PinA 16
-#define Right_Encoder_PinB 17
+#define Right_Encoder_PinA 18 // interrupt pin
+#define Right_Encoder_PinB 14
 
+volatile float right_encoder_angle = 0;
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
 volatile bool RightEncoderBSet;
@@ -84,7 +88,6 @@ int moveState=0; //0 = balance; 1 = back; 2 = forth
 double Kp = 110; //110
 double Kd = 5.5; //5.5
 double Ki = 600; //600
-PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
 double motorSpeedFactorLeft = 0.9;
 double motorSpeedFactorRight = 0.5;
@@ -178,7 +181,7 @@ void MPU6050Connect() {
   // enable Arduino interrupt detection
   Serial.println(F("Enabling interrupt detection (Arduino external interrupt pin 2 on the Uno)..."));
   Serial.print("mpu.getInterruptDrive=  "); Serial.println(mpu.getInterruptDrive());
-  attachInterrupt(0, dmpDataReady, CHANGE); // pin 2 on the Uno. Please check the online Arduino reference for more options for connecting this interrupt pin
+  attachInterrupt(1, dmpDataReady, CHANGE); // pin 2 on the Uno. Please check the online Arduino reference for more options for connecting this interrupt pin
   // get expected DMP packet size for later comparison
   packetSize = mpu.dmpGetFIFOPacketSize();
   mpu.resetFIFO(); // Clear fifo buffer
@@ -418,20 +421,41 @@ void setupEncoders(){
 void updateEncoders(){
   Serial.print("e");
   Serial.print(";");
-  Serial.print(Left_Encoder_Ticks);
+  Serial.print(left_encoder_angle);
   Serial.print(";");
-  Serial.print(Right_Encoder_Ticks);
+  Serial.print(right_encoder_angle);
   Serial.print("\n");
 }
 
+// NOTE: these encoder's CPR = 64, interrupt fxns cannot have any output or Serial.print() due to EnableInterrupt library
 void do_Left_Encoder(){
   LeftEncoderBSet = digitalRead(Left_Encoder_PinB);   // read the input pin
   Left_Encoder_Ticks += LeftEncoderBSet ? -1 : +1;
+
+  if (LeftEncoderBSet == 0)
+    left_encoder_angle += 0.18;
+  if (LeftEncoderBSet == 1)
+    left_encoder_angle -= 0.18;
+
+  if (left_encoder_angle >= 360)
+    left_encoder_angle = 0;
+  else if (left_encoder_angle <= 0)
+    left_encoder_angle = 360;
 }
 
 void do_Right_Encoder(){
   RightEncoderBSet = digitalRead(Right_Encoder_PinB);   // read the input pin
   Right_Encoder_Ticks += RightEncoderBSet ? -1 : +1;
+
+  if (RightEncoderBSet == 0)
+    right_encoder_angle += 0.18;
+  if (RightEncoderBSet == 1)
+    right_encoder_angle -= 0.18;
+
+  if (right_encoder_angle >= 360)
+    right_encoder_angle = 0;
+  else if (right_encoder_angle <= 0)
+    right_encoder_angle = 360;
 }
 
 
@@ -572,13 +596,17 @@ void setup(){
 // ===                          Loop                            ===
 // ================================================================
 void loop(){
+  readSerialInput();
+  updateEncoders();
+  printYawPitchRoll();
+
   // ---- read from the FIFO buffer ---- //
   // The interrupt pin could have changed for some time already.
   // So set mpuInterrupt to false and wait for the next interrupt pin CHANGE signal.
   mpuInterrupt = false;
   //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
-    moveMotors(output, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
+    //moveMotors(-50, MIN_ABS_SPEED); // NOTE: might need a delay after this line...
   }
   mpuInterrupt = false;
   readMPUFIFOBuffer();
@@ -595,7 +623,4 @@ void loop(){
   */
 
   input = ypr[1] * 180/M_PI + 180;
-
-
-  //printYawPitchRoll();
 }
