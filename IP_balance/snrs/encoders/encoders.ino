@@ -33,11 +33,14 @@ MPU6050 mpu;
 #define INB_2 13
 #define PWM_2 11
 
+
+#define MIN_ABS_SPEED 25
+
 // Left Encoder
 #define Left_Encoder_PinA 18
 #define Left_Encoder_PinB 19
 
-volatile int left_encoder_angle = 0;
+volatile float left_encoder_angle = 0;
 volatile long Left_Encoder_Ticks = 0;
 // Variable to read current state of left encoder pin
 volatile bool LeftEncoderBSet;
@@ -46,7 +49,7 @@ volatile bool LeftEncoderBSet;
 #define Right_Encoder_PinA 16
 #define Right_Encoder_PinB 17
 
-volatile int right_encoder_angle = 0;
+volatile float right_encoder_angle = 0;
 volatile long Right_Encoder_Ticks = 0;
 // Variable to read current state of right encoder pin
 volatile bool RightEncoderBSet;
@@ -78,7 +81,6 @@ int moveState=0; //0 = balance; 1 = back; 2 = forth
 double Kp = 110; //110
 double Kd = 5.5; //5.5
 double Ki = 600; //600
-PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
 double motorSpeedFactorLeft = 0.9;
 double motorSpeedFactorRight = 0.5;
@@ -415,7 +417,7 @@ void updateEncoders(){
   Serial.print(left_encoder_angle);
   Serial.print(";");
   //Serial.print(Right_Encoder_Ticks);
-  Serial.print(right_encoder_angle);
+  //Serial.print(right_encoder_angle);
   Serial.print("\n");
 }
 
@@ -424,12 +426,20 @@ void updateEncoders(){
 void do_Left_Encoder(){
   LeftEncoderBSet = digitalRead(Left_Encoder_PinB);   // read the input pin
   Left_Encoder_Ticks += LeftEncoderBSet ? -1 : +1;
-  if (left_encoder_angle == 360)
+
+  if (LeftEncoderBSet == 0)
+    left_encoder_angle += 0.18;
+  if (LeftEncoderBSet == 1)
+    left_encoder_angle -= 0.18;
+
+  if (left_encoder_angle >= 360)
     left_encoder_angle = 0;
-  else if(left_encoder_angle == 0)
+  else if (left_encoder_angle <= 0)
     left_encoder_angle = 360;
-  else
-    left_encoder_angle += LeftEncoderBSet ? -22.5 : +22.5;
+
+
+  Serial.println(left_encoder_angle);
+  
   if (left_encoder_angle < 0 || left_encoder_angle > 360)
     Serial.println("ERROR IMPOSSIBLE ANGLE IN DEGREES FROM LEFT ENCODER");
 }
@@ -584,9 +594,13 @@ void loop(){
   mpuInterrupt = false;
   //  Wait until the next interrupt signal. This ensures the buffer is read right after the signal change.
   while(!mpuInterrupt){
-    moveMotors(output, 20);
+    //moveMotors(output, 20);
     updateEncoders();
-    updateMotors();
+    /*if (left_encoder_angle == 270)
+      updateMotors(20, MIN_ABS_SPEED);
+    if (left_encoder_angle == 90)
+      updateMotors(-20, MIN_ABS_SPEED);*/
+    updateMotors(-20, -MIN_ABS_SPEED);
   }
   mpuInterrupt = false;
   readMPUFIFOBuffer();
@@ -602,5 +616,5 @@ void loop(){
   input = ypr[1] * 180/M_PI + 180;
 
   readSerialInput();
-  printYawPitchRoll();
+  //printYawPitchRoll();
 }
