@@ -8,3 +8,15 @@ For the RTIMULib2 library submodule:
 	and then make the project as normal
 
      This works on the arduino mega, will have to check for other microcontrollers
+
+
+ssh-keygen -t rsa -b 4096 -C "your_email@email.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+xclip -sel clip < ~/.ssh/id_rsa.pub 
+ - on github.com add new ssh key
+git on github add sshkey
+ssh -T git@github.com
+cd your_project/
+git remote set-url origin git@github.com:/user/your_project
+git push origin master
